@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Hourglass, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import Home from "@/pages/Home";
 import PostDetail from "@/components/PostDetail";
+import { useToast } from "@/components/ui/use-toast";
 
 // Target of shared links (pixsup.com/p/<id>): opens the post on top of the
 // live feed, or explains that it has already expired.
@@ -13,6 +14,23 @@ export default function PostLink() {
   const navigate = useNavigate();
   const { handleVote, handleReact, openAuth } = useOutletContext();
   const [post, setPost] = useState(undefined); // undefined = loading, null = gone
+  const [params, setParams] = useSearchParams();
+  const { toast } = useToast();
+
+  // Back from Stripe Checkout (?boost=success|cancelled)
+  useEffect(() => {
+    const boost = params.get("boost");
+    if (!boost) return;
+    if (boost === "success") {
+      toast({
+        title: "⚡ Boost purchased!",
+        description: "It kicks in within a few seconds of Stripe confirming your payment.",
+      });
+    } else {
+      toast({ title: "Boost cancelled", description: "You weren't charged." });
+    }
+    setParams({}, { replace: true });
+  }, [params, setParams, toast]);
 
   useEffect(() => {
     let alive = true;

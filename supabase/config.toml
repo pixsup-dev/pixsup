@@ -2,8 +2,9 @@
 project_id = "qcouyhzvapgknfvrpakt"
 
 # The gateway's JWT check is off for every function: each one decides access
-# itself. analyzePostMedia and deleteAccount verify the signed-in user in code
-# (callerOf), and seedNewsPosts is safe to call by anyone (cron and the app's
+# itself. analyzePostMedia, deleteAccount and createBoostCheckout verify the
+# signed-in user in code (callerOf), stripeWebhook checks Stripe's signature,
+# and seedNewsPosts is safe to call by anyone (cron and the app's
 # refresh button) because it only tops the grid up to a capped amount.
 [functions.analyzePostMedia]
 verify_jwt = false
@@ -15,4 +16,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.cleanupExpiredPosts]
+verify_jwt = false
+
+[functions.createBoostCheckout]
+verify_jwt = false
+
+[functions.stripeWebhook]
 verify_jwt = false

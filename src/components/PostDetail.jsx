@@ -12,11 +12,12 @@ import { useAuth } from "@/lib/AuthContext";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
+import BoostPanel from "@/components/BoostPanel";
 import { moodSummary, reactionPalette } from "@/lib/reactions";
 
 export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
   useBodyScrollLock();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const names = useUsernames([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
   const [text, setText] = useState("");
@@ -175,6 +176,8 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               {current.guest_author_id ? ` at ${current.guest_author_id}` : ""}
             </a>
           )}
+
+          <BoostPanel post={current} user={user} />
 
           <div className="flex justify-around gap-2 rounded-xl bg-white/5 p-2 text-lg">
             {palette.map((r) => (

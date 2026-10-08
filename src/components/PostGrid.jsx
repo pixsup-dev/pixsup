@@ -7,6 +7,7 @@ import ShareButton from "@/components/ShareButton";
 import { formatRemaining } from "@/lib/time";
 import { reactionPalette } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
+import { isSpotlit } from "@/lib/boosts";
 
 function heatClass(hits) {
   if (hits >= 15) return "heatmap-gold";
@@ -93,10 +94,16 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                   </span>
                 )}
               </span>
-              {survivor && (
+              {survivor ? (
                 <span className="absolute left-1.5 top-7 rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
                   👑 SURVIVOR
                 </span>
+              ) : (
+                post.boosted_at && (
+                  <span className="absolute left-1.5 top-7 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
+                    {isSpotlit(post, now) ? "🔦 SPOTLIGHT" : "⚡ BOOSTED"}
+                  </span>
+                )
               )}
               <span className="absolute bottom-1 left-1.5 right-8 truncate text-[11px] font-semibold text-gray-200">
                 {post.title || "Untitled"}

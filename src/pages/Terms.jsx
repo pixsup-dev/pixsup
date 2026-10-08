@@ -61,6 +61,16 @@ export default function Terms() {
         the original articles. That content belongs to its publishers; we don't endorse it.
       </p>
 
+      <h2>Paid Boosts</h2>
+      <p>
+        Boosts are optional one-time purchases that add life to, or spotlight, one of your own
+        posts. Payments are processed by Stripe. A Boost is used up as soon as it is applied, so it
+        isn't refundable once it has started, except where the law requires otherwise. A Boost ends
+        early if the post is removed for breaking these Terms, and it doesn't protect a post from
+        moderation. If a payment goes through but the Boost isn't applied, contact us and we'll fix
+        it or refund you.
+      </p>
+
       <h2>Suspension and termination</h2>
       <p>
         We may suspend or terminate accounts that break these Terms, and may change or discontinue

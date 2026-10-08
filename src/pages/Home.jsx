@@ -10,6 +10,7 @@ import PostGrid from "@/components/PostGrid";
 import PostDetail from "@/components/PostDetail";
 import { isAllTag, keywordsForTag } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
+import { isSpotlit } from "@/lib/boosts";
 
 export default function Home() {
   const { posts, loading, loadPosts, category, query, handleVote, handleReact, openAuth, user } =
@@ -95,13 +96,19 @@ export default function Home() {
       (p) =>
         !p.is_trending &&
         !p.isNews &&
+        !p.boosted_at &&
         Date.now() - new Date(p.created_date).getTime() > 60 * 60 * 1000
     )
     .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))[0];
-  const hourlyPosts = filtered.filter((p) => !p.is_trending);
+  let hourlyPosts = filtered.filter((p) => !p.is_trending);
   if (survivor) {
     hourlyPosts.splice(hourlyPosts.indexOf(survivor), 1);
     hourlyPosts.unshift(survivor);
+  }
+  // Paid Spotlight posts go in front of everything else
+  const spotlit = hourlyPosts.filter((p) => isSpotlit(p));
+  if (spotlit.length) {
+    hourlyPosts = [...spotlit, ...hourlyPosts.filter((p) => !isSpotlit(p))];
   }
 
   return (
