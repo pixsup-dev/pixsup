@@ -19,11 +19,23 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
   const [now, setNow] = useState(() => Date.now());
   const [votedIds, setVotedIds] = useState(() => new Set());
   const scroller = useRef(null);
+  const [canScroll, setCanScroll] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30 * 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Arrows only when there's more to see than fits
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const check = () => setCanScroll(el.scrollWidth > el.clientWidth + 2);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [posts.length]);
 
   if (!posts.length) return null;
 
@@ -34,6 +46,9 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
     posts.length >= TWO_ROWS_FROM
       ? [posts.slice(0, half).map((p, i) => [p, i]), posts.slice(half).map((p, i) => [p, half + i])]
       : [posts.map((p, i) => [p, i])];
+  // Wider screens fit 2/3/4 cards across (fewer if there are fewer columns),
+  // so the cards always fill the row; extra columns scroll.
+  const columns = rows[0].length;
 
   const vote = async (e, post) => {
     e.stopPropagation();
@@ -41,7 +56,7 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
     if (await onVote(post)) setVotedIds((prev) => new Set(prev).add(post.id));
   };
 
-  const renderCard = (post, i) => {
+  const renderCard = (post, i, wide = false) => {
     const remaining = post.expires_at ? new Date(post.expires_at).getTime() - now : 0;
     const justIn = now - new Date(post.created_date).getTime() < JUST_IN_MS;
     const mood = moodSummary(post.reactions, 1)?.[0];
@@ -50,7 +65,17 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
       <button
         key={post.id}
         onClick={() => onOpen(post)}
-        className="relative w-64 shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28] text-left sm:w-72"
+        className={`relative shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28] text-left ${
+          wide ? "" : "w-64"
+        }`}
+        style={
+          wide
+            ? {
+                width:
+                  "calc((100% - (min(var(--cols), var(--fit)) - 1) * 0.75rem) / min(var(--cols), var(--fit)))",
+              }
+            : undefined
+        }
       >
         <div className="relative aspect-video">
           <Image
@@ -117,7 +142,7 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
             Today's biggest stories, ranked by you. Hit one to keep it alive.
           </p>
         </div>
-        <div className="flex shrink-0 gap-1.5">
+        <div className={`flex shrink-0 gap-1.5 ${canScroll ? "" : "invisible"}`}>
           <button aria-label="Scroll left" onClick={() => scrollBy(-1)} className={arrowClass}>
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
@@ -129,10 +154,13 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
 
       {/* Phones: one swipeable row. Wider screens: two rows that scroll together. */}
       <div ref={scroller} className="no-scrollbar snap-x snap-mandatory overflow-x-auto px-1 py-1">
-        <div className="hidden w-max flex-col gap-3 sm:flex">
+        <div
+          className="hidden flex-col gap-3 [--fit:2] sm:flex lg:[--fit:3] xl:[--fit:4]"
+          style={{ "--cols": columns }}
+        >
           {rows.map((row, r) => (
             <div key={r} className="flex gap-3">
-              {row.map(([post, i]) => renderCard(post, i))}
+              {row.map(([post, i]) => renderCard(post, i, true))}
             </div>
           ))}
         </div>
