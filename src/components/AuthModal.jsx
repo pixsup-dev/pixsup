@@ -43,7 +43,7 @@ export default function AuthModal({ onClose }) {
   };
 
   const socialBtn =
-    "flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 text-sm font-bold text-white backdrop-blur-md transition hover:border-cyan-400/50 hover:bg-white/10 active:scale-95";
+    "flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-2.5 text-sm font-bold text-white transition hover:border-cyan-400/50 hover:bg-white/10 active:scale-95";
   const inputClass =
     "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none";
 
@@ -52,13 +52,13 @@ export default function AuthModal({ onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
     >
       <motion.div
         initial={{ scale: 0.95, y: 10 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="relative w-full max-w-sm rounded-2xl border border-white/15 bg-[#151c28]/70 p-6 shadow-[0_0_40px_rgba(34,211,238,0.15)] backdrop-blur-xl"
+        className="relative w-full max-w-sm rounded-2xl border border-white/15 bg-[#151c28]/95 p-6 shadow-[0_0_40px_rgba(34,211,238,0.15)]"
       >
         <button
           onClick={onClose}

@@ -104,7 +104,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
     >
       <motion.div
         initial={{ scale: 0.96 }}
@@ -172,7 +172,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               href={current.source_url}
               target="_blank"
               rel="noreferrer"
-              className="spring-tap flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-400/10 py-2 text-sm font-extrabold text-cyan-300 backdrop-blur-md transition hover:bg-cyan-400/20 active:scale-95"
+              className="spring-tap flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-400/10 py-2 text-sm font-extrabold text-cyan-300 transition hover:bg-cyan-400/20 active:scale-95"
             >
               <ExternalLink className="h-4 w-4" /> Read Full Article
             </a>

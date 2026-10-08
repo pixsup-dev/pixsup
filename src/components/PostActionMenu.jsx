@@ -111,7 +111,7 @@ export default function PostActionMenu({ post, className = "" }) {
 
       {reporting && createPortal(
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 p-4"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="w-full max-w-xs space-y-4 rounded-2xl border border-white/10 bg-[#151c28] p-5">
