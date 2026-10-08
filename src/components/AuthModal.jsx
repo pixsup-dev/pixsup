@@ -5,6 +5,9 @@ import { X, Apple, Chrome, Mail, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 
+// Turn on once Sign in with Apple is configured in Supabase (needed for the iOS app)
+const APPLE_SIGN_IN_ENABLED = false;
+
 export default function AuthModal({ onClose }) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -75,9 +78,11 @@ export default function AuthModal({ onClose }) {
             <button onClick={() => social("google")} className={socialBtn}>
               <Chrome className="h-4 w-4" /> Continue with Google
             </button>
-            <button onClick={() => social("apple")} className={socialBtn}>
-              <Apple className="h-4 w-4" /> Continue with Apple
-            </button>
+            {APPLE_SIGN_IN_ENABLED && (
+              <button onClick={() => social("apple")} className={socialBtn}>
+                <Apple className="h-4 w-4" /> Continue with Apple
+              </button>
+            )}
             <button onClick={() => setEmailMode(true)} className={socialBtn}>
               <Mail className="h-4 w-4" /> Continue with Email
             </button>

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Image } from "@/components/ui/image";
 import { Bookmark, Zap, Hourglass } from "lucide-react";
 import useSavedPosts from "@/hooks/useSavedPosts";
-import SponsoredTile from "@/components/SponsoredTile";
 import PostActionMenu from "@/components/PostActionMenu";
 import ShareButton from "@/components/ShareButton";
 
@@ -217,26 +216,19 @@ export default function PostGrid({ posts, loading, onOpen, onReact }) {
   }, []);
 
   const shown = posts.slice(0, visible);
-  const tiles = [];
-  shown.forEach((p, i) => {
-    tiles.push(
-      <Tile
-        key={p.id}
-        post={p}
-        index={i}
-        now={now}
-        flipped={flippedIds.has(p.id)}
-        onOpen={onOpen}
-        onReact={onReact}
-        isSaved={isSaved(p.id)}
-        onToggleSave={toggleSave}
-      />
-    );
-    // A sponsored slot every 9th item in the rolling feed
-    if ((i + 1) % 8 === 0 && i !== shown.length - 1) {
-      tiles.push(<SponsoredTile key={`sponsored-${i}`} />);
-    }
-  });
+  const tiles = shown.map((p, i) => (
+    <Tile
+      key={p.id}
+      post={p}
+      index={i}
+      now={now}
+      flipped={flippedIds.has(p.id)}
+      onOpen={onOpen}
+      onReact={onReact}
+      isSaved={isSaved(p.id)}
+      onToggleSave={toggleSave}
+    />
+  ));
 
   return (
     <section className="pb-4">

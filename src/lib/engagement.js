@@ -12,7 +12,9 @@ export function engagementScore(post) {
   );
 }
 
+// Public name for a member: their chosen username. Never derived from the
+// email address, which must stay private.
 export function displayNameFor(user) {
   if (!user) return "Someone";
-  return user.display_name || user.full_name || (user.email || "Member").split("@")[0];
+  return user.username || user.display_name || "Member";
 }

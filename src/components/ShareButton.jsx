@@ -1,6 +1,7 @@
 import React from "react";
 import { Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { postUrl } from "@/lib/site";
 
 // Native Web Share pointing at the post's permalink, with a Copy Link fallback
 export default function ShareButton({ post, className }) {
@@ -8,7 +9,7 @@ export default function ShareButton({ post, className }) {
 
   const share = async (e) => {
     e.stopPropagation();
-    const url = `https://pixsup.com/p/${post.id}`;
+    const url = postUrl(post.id);
     if (navigator.share) {
       try {
         await navigator.share({

@@ -28,6 +28,9 @@ const TABLES = {
   Comment: "comments",
   Flag: "flags",
   Notification: "notifications",
+  Profile: "profiles",
+  Block: "blocks",
+  SavedPost: "saved_posts",
 };
 
 // Normalize Supabase/PostgREST errors into thrown Errors with a status, like the Base44 SDK
@@ -58,13 +61,16 @@ function applyRange(q, limit, skip = 0) {
   return q.range(from, to);
 }
 
-// Exact-match filters only — fail loudly on Base44 query operators we don't translate
+// Exact matches, or "any of" for arrays — fail loudly on Base44 query
+// operators we don't translate
 function applyQuery(q, query = {}) {
   for (const [key, value] of Object.entries(query)) {
     if (key.startsWith("$") || (value && typeof value === "object" && !Array.isArray(value))) {
       throw new Error(`Unsupported filter for "${key}" — only exact matches are supported`);
     }
-    q = value === null ? q.is(key, null) : q.eq(key, value);
+    if (value === null) q = q.is(key, null);
+    else if (Array.isArray(value)) q = q.in(key, value);
+    else q = q.eq(key, value);
   }
   return q;
 }
@@ -166,7 +172,7 @@ function absoluteUrl(pathOrUrl) {
 }
 
 const auth = {
-  // { id, email, full_name, display_name, role, created_date }
+  // { id, email, full_name, display_name, username, role, banned, terms_accepted_at, created_date }
   async me() {
     const session = await currentSession();
     if (!session) throw toError({ message: "Not authenticated" }, 401);
@@ -183,7 +189,10 @@ const auth = {
       email: user.email,
       full_name: profile?.full_name ?? meta.full_name ?? meta.name ?? null,
       display_name: profile?.display_name ?? null,
+      username: profile?.username ?? null,
       role: profile?.role ?? "user",
+      banned: profile?.banned ?? false,
+      terms_accepted_at: profile?.terms_accepted_at ?? null,
       created_date: user.created_at,
     };
   },
@@ -219,9 +228,16 @@ const auth = {
     );
   },
 
-  // Sends a 6-digit code (the "Confirm signup" email template must use {{ .Token }})
-  async register({ email, password }) {
-    const data = unwrap(await supabase.auth.signUp({ email, password }));
+  // Sends a 6-digit code (the "Confirm signup" email template must use {{ .Token }}).
+  // acceptedTerms (13+ and Terms/Privacy) is recorded on the profile by a trigger.
+  async register({ email, password, acceptedTerms = false }) {
+    const data = unwrap(
+      await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { terms_accepted: acceptedTerms } },
+      })
+    );
     // Supabase answers "success" with no identities when the email is already taken
     if (data.user && data.user.identities?.length === 0) {
       throw toError({ message: "An account with this email already exists — sign in instead." }, 409);

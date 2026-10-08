@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { useBlocklist, handleLabel } from "@/hooks/useBlocklist";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
-import { LifeBuoy, Shield, Trash2, Mail, Ban } from "lucide-react";
+import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@pixsup.com";
 
@@ -48,6 +48,19 @@ export default function Settings() {
           >
             <Mail className="h-3.5 w-3.5" /> Contact Support · {SUPPORT_EMAIL}
           </a>
+          <div className="mt-3 flex flex-wrap gap-3 text-[11px] font-semibold text-gray-400">
+            <Link to="/terms" className="flex items-center gap-1 hover:text-white">
+              <FileText className="h-3 w-3" /> Terms of Service
+            </Link>
+            <Link to="/privacy" className="flex items-center gap-1 hover:text-white">
+              <FileText className="h-3 w-3" /> Privacy Policy
+            </Link>
+            {user?.role === "admin" && (
+              <Link to="/admin" className="flex items-center gap-1 text-red-300 hover:text-red-200">
+                <ShieldAlert className="h-3 w-3" /> Moderation
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
@@ -80,7 +93,9 @@ export default function Settings() {
             </ul>
           )}
           <p className="mt-2 text-[10px] text-gray-500">
-            Blocked users are hidden from your grid on this device.
+            {user
+              ? "Blocked users are hidden on every device you sign in on, and can't send you notifications."
+              : "Blocked users are hidden on this device. Sign in to keep your blocks everywhere."}
           </p>
         </div>
       </section>

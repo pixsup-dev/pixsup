@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.deleteAccount]
 verify_jwt = false
+
+[functions.cleanupExpiredPosts]
+verify_jwt = false

@@ -98,7 +98,11 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    if (!OPENAI_API_KEY) return json({ error: "OPENAI_API_KEY is not configured" }, 500);
+    // AI not configured yet: let the upload continue unlabelled. The database
+    // only demands an approval once app_settings.ai_moderation_required is on.
+    if (!OPENAI_API_KEY) {
+      return json({ safe: true, reason: "AI moderation not configured", title: null, category: null, hashtags: [], emojis: [] });
+    }
 
     const user = await callerOf(req);
     if (!user) return json({ error: "Sign in to upload" }, 401);

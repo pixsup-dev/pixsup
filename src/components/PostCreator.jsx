@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import { X, UploadCloud, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { compressImage } from "@/lib/compressImage";
 
 export default function PostCreator({ onClose, onCreated }) {
   const [file, setFile] = useState(null);
@@ -47,7 +48,9 @@ export default function PostCreator({ onClose, onCreated }) {
     setBusy(true);
     try {
       setStatus("Uploading media…");
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // Photos are resized and stripped of location data before upload
+      const upload = await compressImage(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: upload });
       const mediaType = file.type.startsWith("video") ? "video" : "image";
 
       let category = null;

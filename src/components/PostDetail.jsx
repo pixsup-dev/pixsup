@@ -7,7 +7,6 @@ import { categoryFor } from "@/components/CategoryChips";
 import ShareButton from "@/components/ShareButton";
 import PostActionMenu from "@/components/PostActionMenu";
 import useSavedPosts from "@/hooks/useSavedPosts";
-import { createNotification } from "@/lib/notify";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -65,26 +64,11 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
     if (!text.trim()) return;
     try {
       // a comment adds +5 bonus minutes of life and bumps the engagement score
-      // (add_comment saves the comment and updates the post atomically)
+      // (add_comment saves the comment, updates the post and notifies its owner)
       const updated = await base44.rpc("add_comment", { p_post_id: post.id, p_text: text });
       setText("");
       const updates = { comment_count: updated.comment_count, expires_at: updated.expires_at };
       setCurrent((c) => ({ ...c, ...updates }));
-      let me = null;
-      try {
-        me = await base44.auth.me();
-      } catch (e) {
-        me = null;
-      }
-      if (me) {
-        await createNotification({
-          recipientId: current.created_by_id,
-          type: "comment",
-          postId: post.id,
-          postTitle: current.title,
-          actor: me,
-        });
-      }
       loadComments();
     } catch (e) {
       console.error(e);

@@ -15,6 +15,10 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
+import PostLink from '@/pages/PostLink';
+import Admin from '@/pages/Admin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
@@ -35,12 +39,16 @@ const AuthenticatedApp = () => {
     <Route path="/register" element={<Register />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/terms" element={<Terms />} />
+    <Route path="/privacy" element={<Privacy />} />
     <Route element={<AppLayout />}>
       <Route path="/" element={<Home />} />
       <Route path="/hits" element={<Hits />} />
       <Route path="/explore" element={<Explore />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/p/:id" element={<PostLink />} />
+      <Route path="/admin" element={<Admin />} />
     </Route>
     <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -19,6 +19,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,9 +28,13 @@ export default function Register() {
       setError("Passwords do not match");
       return;
     }
+    if (!acceptedTerms) {
+      setError("Please confirm you're 13 or older and accept the Terms");
+      return;
+    }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      await base44.auth.register({ email, password, acceptedTerms });
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -216,7 +221,21 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <label className="flex items-start gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4"
+            required
+          />
+          <span>
+            I'm 13 or older and agree to the{" "}
+            <Link to="/terms" target="_blank" className="text-primary underline">Terms of Service</Link> and{" "}
+            <Link to="/privacy" target="_blank" className="text-primary underline">Privacy Policy</Link>.
+          </span>
+        </label>
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !acceptedTerms}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -231,8 +250,8 @@ export default function Register() {
       <div className="mt-4 rounded-lg border border-border bg-muted/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
         <span className="font-semibold text-foreground">Acceptable Use:</span> Pixsup has
         zero tolerance for objectionable content — harassment, hate speech, or explicit
-        material will be removed and accounts terminated. By creating an account you
-        agree to our Terms of Service.
+        material will be removed and accounts terminated. See our{" "}
+        <Link to="/terms" target="_blank" className="underline">Terms of Service</Link>.
       </div>
     </AuthLayout>
   );

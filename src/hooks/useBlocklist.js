@@ -1,15 +1,4 @@
-import { useEffect, useState } from "react";
-
-const KEY = "pixsup_blocked_authors";
-const listeners = new Set();
-
-const readList = () => {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
+import { createSyncedList } from "@/hooks/syncedList";
 
 // The author key of a post: the news source for news tiles (e.g. "BBC News"),
 // the member ID for member posts, or the legacy guest ID for old anonymous posts
@@ -28,32 +17,16 @@ export function handleLabel(key) {
   return key; // a news source
 }
 
-// Local block list (per browser). Blocking a handle notifies every mounted
-// consumer immediately, so blocked authors vanish from the feed at once.
+// Blocked authors: in this browser for guests, on the account for members
+// (so blocks apply on every device, and blocked members can't notify you).
+// Blocking notifies every mounted consumer, so their posts vanish at once.
+export const blocklist = createSyncedList({
+  storageKey: "pixsup_blocked_authors",
+  entity: "Block",
+  field: "blocked_key",
+});
+
 export function useBlocklist() {
-  const [blocked, setBlocked] = useState(readList);
-
-  useEffect(() => {
-    const fn = (list) => setBlocked(list);
-    listeners.add(fn);
-    return () => listeners.delete(fn);
-  }, []);
-
-  const block = (authorKey) => {
-    if (!authorKey) return;
-    const list = readList();
-    if (list.includes(authorKey)) return;
-    const next = [...list, authorKey];
-    localStorage.setItem(KEY, JSON.stringify(next));
-    listeners.forEach((fn) => fn(next));
-  };
-
-  const unblock = (authorKey) => {
-    if (!authorKey) return;
-    const next = readList().filter((k) => k !== authorKey);
-    localStorage.setItem(KEY, JSON.stringify(next));
-    listeners.forEach((fn) => fn(next));
-  };
-
-  return { blocked, block, unblock };
+  const blocked = blocklist.useList();
+  return { blocked, block: blocklist.add, unblock: blocklist.remove };
 }
