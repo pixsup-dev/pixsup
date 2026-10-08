@@ -1,0 +1,107 @@
+{
+  "name": "Post",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "media_url": {
+      "type": "string"
+    },
+    "media_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "video"
+      ]
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "guest_author_id": {
+      "type": "string"
+    },
+    "hits": {
+      "type": "number",
+      "default": 0
+    },
+    "is_trending": {
+      "type": "boolean",
+      "default": false
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trending_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Nature",
+        "Urban",
+        "Art",
+        "Food",
+        "Travel",
+        "Sports",
+        "Gaming",
+        "AI"
+      ]
+    },
+    "hashtags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "emojis": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reactions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "comment_count": {
+      "type": "number",
+      "default": 0
+    },
+    "isNews": {
+      "type": "boolean",
+      "default": false
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "isPromoted": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "media_url",
+    "media_type"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

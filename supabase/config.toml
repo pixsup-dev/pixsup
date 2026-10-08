@@ -1,0 +1,11 @@
+# Used by `supabase functions deploy`.
+project_id = "qcouyhzvapgknfvrpakt"
+
+# Both functions are called by guests too, so the gateway shouldn't demand a
+# signed-in user's JWT. Neither trusts the caller: analyzePostMedia is a pure
+# stub and seedNewsPosts only tops the grid up to a capped minimum.
+[functions.analyzePostMedia]
+verify_jwt = false
+
+[functions.seedNewsPosts]
+verify_jwt = false

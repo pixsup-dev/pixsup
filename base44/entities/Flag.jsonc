@@ -1,0 +1,36 @@
+{
+  "name": "Flag",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "Spam",
+        "Inappropriate",
+        "Harassment"
+      ]
+    }
+  },
+  "required": [
+    "post_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

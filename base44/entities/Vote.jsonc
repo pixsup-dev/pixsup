@@ -1,0 +1,30 @@
+{
+  "name": "Vote",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string"
+    },
+    "value": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "required": [
+    "post_id"
+  ],
+  "rls": {
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
