@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Loader2, ArrowDown } from "lucide-react";
 import TrendingBelt from "@/components/TrendingBelt";
+import WorldPulse from "@/components/WorldPulse";
 import RisingBelt from "@/components/RisingBelt";
 import PostGrid from "@/components/PostGrid";
 import PostDetail from "@/components/PostDetail";
@@ -52,12 +53,29 @@ export default function Home() {
 
   const filtered = posts.filter(matchesFilter);
   const byScore = (a, b) => engagementScore(b) - engagementScore(a);
+  // World Pulse: live top stories, ranked by how hard people keep them alive
+  const pulseTag = category.toLowerCase();
+  const showPulse = isAllTag(category) || pulseTag === "#news" || pulseTag === "#world";
+  const pulse = showPulse
+    ? posts
+        .filter((p) => p.top_story && (!q || (p.title || "").toLowerCase().includes(q)))
+        .sort(
+          (a, b) =>
+            byScore(a, b) || new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
+        )
+        .slice(0, 5)
+    : [];
+  const pulseIds = new Set(pulse.map((p) => p.id));
+
   const trending = filtered.filter((p) => p.is_trending).sort(byScore);
   // Until something actually trends, the belt shows the most-engaged posts as
   // "Hot right now" — never zero-engagement posts dressed up as trending.
   const showingHot = trending.length === 0;
   const beltPosts = showingHot
-    ? filtered.filter((p) => engagementScore(p) > 0).sort(byScore).slice(0, 8)
+    ? filtered
+        .filter((p) => engagementScore(p) > 0 && !pulseIds.has(p.id))
+        .sort(byScore)
+        .slice(0, 8)
     : trending.slice(0, 10);
   const beltIds = new Set(beltPosts.map((p) => p.id));
   const rising = filtered
@@ -94,6 +112,7 @@ export default function Home() {
       )}
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
+        <WorldPulse posts={pulse} onVote={handleVote} onOpen={setActivePost} />
         <TrendingBelt
           posts={beltPosts}
           title={showingHot ? "Hot Right Now" : "24-Hour Trending Belt"}

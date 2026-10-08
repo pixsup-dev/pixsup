@@ -5,6 +5,7 @@ import useSavedPosts from "@/hooks/useSavedPosts";
 import PostActionMenu from "@/components/PostActionMenu";
 import ShareButton from "@/components/ShareButton";
 import { formatRemaining } from "@/lib/time";
+import { reactionPalette } from "@/lib/reactions";
 
 function heatClass(hits) {
   if (hits >= 15) return "heatmap-gold";
@@ -13,11 +14,7 @@ function heatClass(hits) {
 }
 
 function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSave }) {
-  const palette = [
-    "🔥",
-    "😂",
-    ...(post.emojis && post.emojis.length ? post.emojis : ["🤯", "💀"]),
-  ];
+  const palette = reactionPalette(post);
   const media = post.thumbnail_url || post.media_url;
   const remaining = post.expires_at
     ? Math.max(0, new Date(post.expires_at) - now)
@@ -49,7 +46,10 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
     onReact(post, emoji);
   };
 
-  const angles = [-75, -25, 25, 75];
+  // Fan the reaction buttons evenly across an arc above the finger
+  const angles = palette.map((_, i) =>
+    palette.length === 1 ? 0 : -80 + (i * 160) / (palette.length - 1)
+  );
   const reactionEntries = post.reactions
     ? Object.entries(post.reactions).filter(([, c]) => c > 0)
     : [];

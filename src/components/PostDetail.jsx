@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/AuthContext";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
+import { moodSummary, reactionPalette } from "@/lib/reactions";
 
 export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
   useBodyScrollLock();
@@ -25,11 +26,8 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   const { toast } = useToast();
   const { isSaved, toggleSave } = useSavedPosts();
 
-  const palette = [
-    "🔥",
-    "😂",
-    ...(current.emojis && current.emojis.length ? current.emojis : ["🤯", "💀"]),
-  ];
+  const palette = reactionPalette(current);
+  const mood = current.isNews ? moodSummary(current.reactions) : null;
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -158,6 +156,9 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
                 ? `by @${names[current.created_by_id]}`
                 : null}
           </p>
+          {current.isNews && current.summary && (
+            <p className="text-sm leading-relaxed text-gray-300">{current.summary}</p>
+          )}
           {current.isNews && current.source_url && (
             <a
               href={current.source_url}
@@ -165,7 +166,8 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               rel="noreferrer"
               className="spring-tap flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-400/10 py-2 text-sm font-extrabold text-cyan-300 transition hover:bg-cyan-400/20 active:scale-95"
             >
-              <ExternalLink className="h-4 w-4" /> Read Full Article
+              <ExternalLink className="h-4 w-4" /> Read the full story
+              {current.guest_author_id ? ` at ${current.guest_author_id}` : ""}
             </a>
           )}
 
@@ -183,6 +185,26 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               </button>
             ))}
           </div>
+
+          {mood && (
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                How people feel
+              </p>
+              <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-white/5">
+                {mood.map((m, i) => (
+                  <div
+                    key={m.emoji}
+                    className={["bg-cyan-400", "bg-orange-400", "bg-violet-400"][i]}
+                    style={{ width: `${m.pct}%` }}
+                  />
+                ))}
+              </div>
+              <p className="text-xs font-semibold text-gray-300">
+                {mood.map((m) => `${m.pct}% ${m.emoji}`).join("  ·  ")}
+              </p>
+            </div>
+          )}
 
           <button
             onClick={vote}

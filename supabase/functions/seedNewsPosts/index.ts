@@ -3,8 +3,14 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { admin } from "../_shared/supabase.ts";
 
 // Live news ingestion from public RSS/Atom feeds. Each story becomes a news
-// tile (headline + image + link back to the publisher) that expires after a
-// few hours. Runs on a schedule (Supabase Cron) and when the app's grid runs low.
+// tile (headline + summary + image + link back to the publisher) that expires
+// after a few hours. Runs on a schedule (Supabase Cron) and when the app's
+// grid runs low.
+//
+// Two kinds of feeds:
+//  - topic feeds keep the grid varied (one fresh story per feed per run)
+//  - top-story feeds supply the World Pulse belt: their first items are what
+//    the editors rank as the biggest stories right now, so feed order matters
 
 // Every feed here was checked to ship an image with each story
 const FEEDS = [
@@ -20,12 +26,32 @@ const FEEDS = [
   { source: "The Guardian", topic: "Art", url: "https://www.theguardian.com/artanddesign/rss" },
 ];
 
+const TOP_FEEDS = [
+  { source: "BBC News", topic: "World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", take: 2 },
+  { source: "The Guardian", topic: "World", url: "https://www.theguardian.com/world/rss", take: 2 },
+  { source: "NPR", topic: "World", url: "https://feeds.npr.org/1004/rss.xml", take: 1 },
+];
+
 const NEWS_LIFETIME_MS = 6 * 60 * 60 * 1000; // a news tile lives 6 hours
 const MAX_STORY_AGE_MS = 24 * 60 * 60 * 1000; // ignore stories older than a day
-const MAX_LIVE_NEWS = 30; // never let news crowd out member posts
+const MAX_LIVE_NEWS = 30; // never let topic news crowd out member posts
+const MAX_LIVE_TOP = 10; // World Pulse candidates alive at once
 const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
 const DELETE_AFTER_MS = 2 * 24 * 60 * 60 * 1000; // purge expired news after 2 days
+const SUMMARY_MAX = 280;
+
+type Feed = { source: string; topic: string; url: string };
+
+type Story = {
+  title: string;
+  summary: string | null;
+  link: string;
+  image: string;
+  published: number;
+  source: string;
+  topic: string;
+};
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -34,15 +60,6 @@ const parser = new XMLParser({
   isArray: (name) =>
     ["item", "entry", "link", "media:content", "media:thumbnail", "enclosure"].includes(name),
 });
-
-type Story = {
-  title: string;
-  link: string;
-  image: string;
-  published: number;
-  source: string;
-  topic: string;
-};
 
 // deno-lint-ignore no-explicit-any
 function text(value: any): string {
@@ -89,6 +106,17 @@ function imageOf(item: any): string {
   return url.replace(/(ichef\.bbci\.co\.uk\/ace\/(?:standard|ws))\/\d+\//, "$1/976/");
 }
 
+// The publisher's own one- or two-sentence standfirst, as plain text
+// deno-lint-ignore no-explicit-any
+function summaryOf(item: any, title: string): string | null {
+  const raw = text(item.description) || text(item.summary);
+  const firstParagraph = raw.match(/<p>([\s\S]*?)<\/p>/i)?.[1] ?? raw;
+  let s = decode(firstParagraph.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+  if (s.length < 25 || s.toLowerCase() === title.toLowerCase()) return null;
+  if (s.length > SUMMARY_MAX) s = s.slice(0, SUMMARY_MAX - 1).replace(/\s+\S*$/, "") + "…";
+  return s;
+}
+
 // deno-lint-ignore no-explicit-any
 function linkOf(item: any): string {
   const links = item.link || [];
@@ -99,7 +127,8 @@ function linkOf(item: any): string {
   return "";
 }
 
-async function fetchFeed(feed: (typeof FEEDS)[number]): Promise<Story[]> {
+// Stories in the feed's own order (editorial prominence), fresh ones only
+async function fetchFeed(feed: Feed, now: number): Promise<Story[]> {
   const res = await fetch(feed.url, {
     headers: { "User-Agent": "PixsupNewsBot/1.0" },
     signal: AbortSignal.timeout(8000),
@@ -112,11 +141,38 @@ async function fetchFeed(feed: (typeof FEEDS)[number]): Promise<Story[]> {
     const title = decode(text(item.title)).slice(0, 200);
     const link = linkOf(item);
     const image = imageOf(item);
-    const published = Date.parse(text(item.pubDate) || text(item.published) || text(item.updated));
+    const published = Date.parse(text(item.pubDate) || text(item.published) || text(item.updated)) || now;
     if (!title || !link.startsWith("https://") || !image.startsWith("https://")) continue;
-    stories.push({ title, link, image, published: published || Date.now(), source: feed.source, topic: feed.topic });
+    if (now - published > MAX_STORY_AGE_MS) continue;
+    stories.push({ title, summary: summaryOf(item, title), link, image, published, source: feed.source, topic: feed.topic });
   }
-  return stories.sort((a, b) => b.published - a.published);
+  return stories;
+}
+
+async function fetchAll(feeds: Feed[], now: number) {
+  const results = await Promise.allSettled(feeds.map((f) => fetchFeed(f, now)));
+  const failed = results
+    .map((r, i) => (r.status === "rejected" ? `${feeds[i].url}: ${r.reason}` : null))
+    .filter(Boolean);
+  return { perFeed: results.map((r) => (r.status === "fulfilled" ? r.value : [])), failed };
+}
+
+function toRow(s: Story, expiresAt: string, topStory: boolean) {
+  return {
+    title: s.title,
+    summary: s.summary,
+    media_url: s.image,
+    thumbnail_url: s.image,
+    media_type: "image",
+    // category drives the grid's topic filter (#Tech, #Sports…); isNews marks it as news
+    category: s.topic,
+    hashtags: ["#News", `#${s.topic}`],
+    guest_author_id: s.source,
+    source_url: s.link,
+    isNews: true,
+    top_story: topStory,
+    expires_at: expiresAt,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -128,6 +184,7 @@ Deno.serve(async (req) => {
     const minActive = Math.min(Math.max(Number(body.min_active) || 8, 1), 50);
     const now = Date.now();
     const nowIso = new Date(now).toISOString();
+    const expiresAt = new Date(now + NEWS_LIFETIME_MS).toISOString();
 
     // Housekeeping: drop news tiles that expired long ago
     await admin
@@ -138,63 +195,79 @@ Deno.serve(async (req) => {
 
     const { data: live, error } = await admin
       .from("posts")
-      .select("id, isNews, created_date")
+      .select("id, isNews, top_story, created_date")
       .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
       .limit(1000);
     if (error) throw error;
 
-    const liveNews = live.filter((p) => p.isNews);
-    const lastNewsAt = Math.max(0, ...liveNews.map((p) => Date.parse(p.created_date)));
+    const liveNews = live.filter((p) => p.isNews && !p.top_story);
+    const liveTop = live.filter((p) => p.top_story);
+    const lastNewsAt = Math.max(0, ...live.filter((p) => p.isNews).map((p) => Date.parse(p.created_date)));
     const gridLow = live.length < minActive;
-    if (liveNews.length >= MAX_LIVE_NEWS || (!gridLow && now - lastNewsAt < MIN_RUN_GAP_MS)) {
+    if (!gridLow && now - lastNewsAt < MIN_RUN_GAP_MS) {
       return json({ success: true, seeded: 0, active: live.length, reason: "up to date" });
     }
 
-    const results = await Promise.allSettled(FEEDS.map(fetchFeed));
-    const failed = results
-      .map((r, i) => (r.status === "rejected" ? `${FEEDS[i].url}: ${r.reason}` : null))
-      .filter(Boolean);
-    const perFeed = results.map((r) => (r.status === "fulfilled" ? r.value : []))
-      .map((stories) => stories.filter((s) => now - s.published < MAX_STORY_AGE_MS));
+    const [topic, top] = await Promise.all([fetchAll(FEEDS, now), fetchAll(TOP_FEEDS, now)]);
 
-    // Skip stories we've already posted (live or recently expired)
-    const candidateLinks = perFeed.flat().map((s) => s.link);
+    // Which of these stories are already on Pixsup (live or recently expired)?
+    const candidateLinks = [...topic.perFeed.flat(), ...top.perFeed.flat()].map((s) => s.link);
     const { data: seen, error: seenError } = candidateLinks.length
-      ? await admin.from("posts").select("source_url").in("source_url", candidateLinks)
+      ? await admin.from("posts").select("id, source_url, top_story").in("source_url", candidateLinks)
       : { data: [], error: null };
     if (seenError) throw seenError;
-    const seenLinks = new Set((seen || []).map((p) => p.source_url));
+    const seenByLink = new Map((seen || []).map((p) => [p.source_url, p]));
 
-    const budget = MAX_LIVE_NEWS - liveNews.length;
-    const picked: Story[] = [];
-    for (const stories of perFeed) {
-      picked.push(...stories.filter((s) => !seenLinks.has(s.link)).slice(0, PER_FEED_PER_RUN));
+    // 1) World Pulse: the editors' top items from each top-story feed
+    const topPicks = new Map<string, Story>();
+    TOP_FEEDS.forEach((feed, i) => {
+      for (const s of top.perFeed[i].slice(0, feed.take)) topPicks.set(s.link, s);
+    });
+    // A top story we already posted as ordinary news gets promoted in place
+    const promoteIds = [...topPicks.keys()]
+      .map((link) => seenByLink.get(link))
+      .filter((p) => p && !p.top_story)
+      .map((p) => p!.id);
+    if (promoteIds.length) {
+      const { error: promoteError } = await admin.from("posts").update({ top_story: true }).in("id", promoteIds);
+      if (promoteError) throw promoteError;
     }
-    const fresh = [...new Map(picked.map((s) => [s.link, s])).values()]
+    const newTop = [...topPicks.values()]
+      .filter((s) => !seenByLink.has(s.link))
+      .slice(0, Math.max(0, MAX_LIVE_TOP - liveTop.length - promoteIds.length));
+
+    // 2) Topic news: one fresh story per feed, newest first, within the cap
+    const takenLinks = new Set([...seenByLink.keys(), ...newTop.map((s) => s.link)]);
+    const picked: Story[] = [];
+    for (const stories of topic.perFeed) {
+      picked.push(
+        ...[...stories]
+          .sort((a, b) => b.published - a.published)
+          .filter((s) => !takenLinks.has(s.link))
+          .slice(0, PER_FEED_PER_RUN)
+      );
+    }
+    const newTopic = [...new Map(picked.map((s) => [s.link, s])).values()]
       .sort((a, b) => b.published - a.published)
-      .slice(0, budget);
+      .slice(0, Math.max(0, MAX_LIVE_NEWS - liveNews.length));
 
-    const expiresAt = new Date(now + NEWS_LIFETIME_MS).toISOString();
-    const rows = fresh.map((s) => ({
-      title: s.title,
-      media_url: s.image,
-      thumbnail_url: s.image,
-      media_type: "image",
-      // category drives the grid's topic filter (#Tech, #Sports…); isNews marks it as news
-      category: s.topic,
-      hashtags: ["#News", `#${s.topic}`],
-      guest_author_id: s.source,
-      source_url: s.link,
-      isNews: true,
-      expires_at: expiresAt,
-    }));
-
+    const rows = [
+      ...newTop.map((s) => toRow(s, expiresAt, true)),
+      ...newTopic.map((s) => toRow(s, expiresAt, false)),
+    ];
     if (rows.length > 0) {
       const { error: insertError } = await admin.from("posts").insert(rows);
       if (insertError) throw insertError;
     }
 
-    return json({ success: true, seeded: rows.length, active: live.length + rows.length, failed });
+    return json({
+      success: true,
+      seeded: rows.length,
+      topStories: newTop.length,
+      promoted: promoteIds.length,
+      active: live.length + rows.length,
+      failed: [...topic.failed, ...top.failed],
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
     return json({ error: message || String(error) }, 500);
