@@ -222,8 +222,8 @@ export default function PostCreator({ onClose, onCreated }) {
         )}
         <p className="text-center text-[10px] text-gray-400">
           Every photo is AI-scanned, titled and tagged before publishing · Standard posts
-          expire in 1 hour · Each Hit adds +1 minute · Each comment adds +5 minutes ·
-          Each emoji adds +2 minutes
+          expire in 1 hour · Each Hit adds +5 minutes · Each comment adds +10 minutes ·
+          Each emoji adds +3 minutes
         </p>
       </motion.div>
     </motion.div>

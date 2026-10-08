@@ -66,7 +66,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   const addComment = async () => {
     if (!text.trim()) return;
     try {
-      // a comment adds +5 bonus minutes of life and bumps the engagement score
+      // a comment adds +10 bonus minutes of life and bumps the engagement score
       // (add_comment saves the comment, updates the post and notifies its owner)
       const updated = await base44.rpc("add_comment", { p_post_id: post.id, p_text: text });
       setText("");

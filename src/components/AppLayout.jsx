@@ -136,7 +136,7 @@ export default function AppLayout() {
     return top.length > 0 ? ["#All", ...top.map((t) => t.tag)] : HASHTAG_POOLS[0];
   }, [visiblePosts]);
 
-  // A Hit = +1 point and +1 minute of life; 20 composite points promote to the 24h belt
+  // A Hit = +1 point and +5 minutes of life; 20 composite points promote to the 24h belt
   const handleVote = async (post) => {
     if (!user) {
       // Guests hit instantly — the boost lives in this browsing session only
@@ -165,7 +165,7 @@ export default function AppLayout() {
     }
   };
 
-  // An emoji reaction = +2 points and +2 minutes of life
+  // An emoji reaction = +2 points and +3 minutes of life
   const handleReact = async (post, emoji) => {
     if (!user) {
       // Guests react instantly — the boost lives in this browsing session only
