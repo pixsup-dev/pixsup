@@ -24,22 +24,28 @@ const FEEDS = [
   { source: "The Guardian", topic: "Travel", url: "https://www.theguardian.com/travel/rss" },
   { source: "The Guardian", topic: "Food", url: "https://www.theguardian.com/food/rss" },
   { source: "The Guardian", topic: "Art", url: "https://www.theguardian.com/artanddesign/rss" },
+  { source: "BBC News", topic: "Business", url: "https://feeds.bbci.co.uk/news/business/rss.xml" },
+  { source: "BBC News", topic: "Health", url: "https://feeds.bbci.co.uk/news/health/rss.xml" },
+  { source: "BBC News", topic: "Entertainment", url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" },
 ];
 
 const TOP_FEEDS = [
-  { source: "BBC News", topic: "World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", take: 2 },
-  { source: "The Guardian", topic: "World", url: "https://www.theguardian.com/world/rss", take: 2 },
-  { source: "NPR", topic: "World", url: "https://feeds.npr.org/1004/rss.xml", take: 1 },
+  { source: "BBC News", topic: "World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", take: 5 },
+  { source: "The Guardian", topic: "World", url: "https://www.theguardian.com/world/rss", take: 4 },
+  { source: "NPR", topic: "World", url: "https://feeds.npr.org/1004/rss.xml", take: 3 },
 ];
 
 const NEWS_LIFETIME_MS = 6 * 60 * 60 * 1000; // a news tile lives 6 hours
 const MAX_STORY_AGE_MS = 24 * 60 * 60 * 1000; // ignore stories older than a day
-const MAX_LIVE_NEWS = 30; // never let topic news crowd out member posts
+const MAX_LIVE_NEWS = 40; // never let topic news crowd out member posts
 const MAX_LIVE_TOP = 10; // World Pulse candidates alive at once
 const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
 const DELETE_AFTER_MS = 2 * 24 * 60 * 60 * 1000; // purge expired news after 2 days
 const SUMMARY_MAX = 280;
+// When the caps are full, fresh stories replace news nobody has engaged with
+// that has been up at least this long (engaged news keeps its full life)
+const RETIRE_AFTER_MS = 60 * 60 * 1000;
 const LINK_BATCH = 25; // links per "already posted?" query, keeps URLs short
 
 type Feed = { source: string; topic: string; url: string };
@@ -196,13 +202,32 @@ Deno.serve(async (req) => {
 
     const { data: live, error } = await admin
       .from("posts")
-      .select("id, isNews, top_story, created_date")
+      .select("id, isNews, top_story, created_date, hits, reactions, comment_count, is_trending, boosted_at")
       .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
       .limit(1000);
     if (error) throw error;
 
     const liveNews = live.filter((p) => p.isNews && !p.top_story);
     const liveTop = live.filter((p) => p.top_story);
+    // Oldest first: untouched news that has had its hour, free to make room
+    const retirable = (list: typeof live) =>
+      list
+        .filter(
+          (p) =>
+            !p.hits &&
+            !p.comment_count &&
+            !p.is_trending &&
+            !p.boosted_at &&
+            !Object.keys(p.reactions || {}).length &&
+            now - Date.parse(p.created_date) > RETIRE_AFTER_MS
+        )
+        .sort((a, b) => Date.parse(a.created_date) - Date.parse(b.created_date));
+    const retireIds: string[] = [];
+    const makeRoom = (wanted: number, room: number, list: typeof live) => {
+      const extra = retirable(list).slice(0, Math.max(0, wanted - room));
+      retireIds.push(...extra.map((p) => p.id));
+      return room + extra.length;
+    };
     const lastNewsAt = Math.max(0, ...live.filter((p) => p.isNews).map((p) => Date.parse(p.created_date)));
     const gridLow = live.length < minActive;
     if (!gridLow && now - lastNewsAt < MIN_RUN_GAP_MS) {
@@ -239,9 +264,13 @@ Deno.serve(async (req) => {
       const { error: promoteError } = await admin.from("posts").update({ top_story: true }).in("id", promoteIds);
       if (promoteError) throw promoteError;
     }
-    const newTop = [...topPicks.values()]
-      .filter((s) => !seenByLink.has(s.link))
-      .slice(0, Math.max(0, MAX_LIVE_TOP - liveTop.length - promoteIds.length));
+    const freshTop = [...topPicks.values()].filter((s) => !seenByLink.has(s.link));
+    const topRoom = makeRoom(
+      freshTop.length,
+      Math.max(0, MAX_LIVE_TOP - liveTop.length - promoteIds.length),
+      liveTop
+    );
+    const newTop = freshTop.slice(0, topRoom);
 
     // 2) Topic news: one fresh story per feed, newest first, within the cap
     const takenLinks = new Set([...seenByLink.keys(), ...newTop.map((s) => s.link)]);
@@ -254,9 +283,20 @@ Deno.serve(async (req) => {
           .slice(0, PER_FEED_PER_RUN)
       );
     }
-    const newTopic = [...new Map(picked.map((s) => [s.link, s])).values()]
-      .sort((a, b) => b.published - a.published)
-      .slice(0, Math.max(0, MAX_LIVE_NEWS - liveNews.length));
+    const freshTopic = [...new Map(picked.map((s) => [s.link, s])).values()].sort(
+      (a, b) => b.published - a.published
+    );
+    const topicRoom = makeRoom(freshTopic.length, Math.max(0, MAX_LIVE_NEWS - liveNews.length), liveNews);
+    const newTopic = freshTopic.slice(0, topicRoom);
+
+    // Retire the replaced tiles (they expire now; cleanup deletes them later)
+    if (retireIds.length) {
+      const { error: retireError } = await admin
+        .from("posts")
+        .update({ expires_at: nowIso })
+        .in("id", retireIds);
+      if (retireError) throw retireError;
+    }
 
     const rows = [
       ...newTop.map((s) => toRow(s, expiresAt, true)),
@@ -272,7 +312,8 @@ Deno.serve(async (req) => {
       seeded: rows.length,
       topStories: newTop.length,
       promoted: promoteIds.length,
-      active: live.length + rows.length,
+      retired: retireIds.length,
+      active: live.length - retireIds.length + rows.length,
       failed: [...topic.failed, ...top.failed],
     });
   } catch (error) {

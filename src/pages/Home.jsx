@@ -55,18 +55,21 @@ export default function Home() {
 
   const filtered = posts.filter(matchesFilter);
   const byScore = (a, b) => engagementScore(b) - engagementScore(a);
-  // World Pulse: live top stories, ranked by how hard people keep them alive
+  // World Pulse: live top stories, ranked by how hard people keep them alive.
+  // Any other topic gets its own pulse (e.g. "Tech Pulse") from that topic's news.
   const pulseTag = category.toLowerCase();
-  const showPulse = isAllTag(category) || pulseTag === "#news" || pulseTag === "#world";
-  const pulse = showPulse
-    ? posts
-        .filter((p) => p.top_story && (!q || (p.title || "").toLowerCase().includes(q)))
-        .sort(
-          (a, b) =>
-            byScore(a, b) || new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
-        )
-        .slice(0, 10)
-    : [];
+  const worldPulse = isAllTag(category) || pulseTag === "#news" || pulseTag === "#world";
+  const pulseTitle = worldPulse ? "World Pulse" : `${category.replace("#", "")} Pulse`;
+  const pulse = (
+    worldPulse
+      ? posts.filter((p) => p.top_story && (!q || (p.title || "").toLowerCase().includes(q)))
+      : filtered.filter((p) => p.isNews)
+  )
+    .sort(
+      (a, b) =>
+        byScore(a, b) || new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
+    )
+    .slice(0, 10);
   const pulseIds = new Set(pulse.map((p) => p.id));
 
   const trending = filtered.filter((p) => p.is_trending).sort(byScore);
@@ -134,7 +137,7 @@ export default function Home() {
       )}
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
-        <WorldPulse posts={pulse} onVote={handleVote} onOpen={setActivePost} />
+        <WorldPulse posts={pulse} title={pulseTitle} onVote={handleVote} onOpen={setActivePost} />
         <RescueRow
           posts={filtered}
           user={user}

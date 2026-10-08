@@ -15,7 +15,7 @@ const arrowClass =
 // "The people's front page": the biggest world stories right now, ranked by
 // how hard people are keeping them alive. Every story dies when its timer
 // runs out unless someone hits it.
-export default function WorldPulse({ posts, onVote, onOpen }) {
+export default function WorldPulse({ posts, title = "World Pulse", onVote, onOpen }) {
   const [now, setNow] = useState(() => Date.now());
   const [votedIds, setVotedIds] = useState(() => new Set());
   const scroller = useRef(null);
@@ -136,7 +136,7 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
       <div className="mb-3 flex items-end justify-between px-1">
         <div>
           <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-cyan-300">
-            <Globe2 className="h-3.5 w-3.5" /> World Pulse
+            <Globe2 className="h-3.5 w-3.5" /> {title}
           </h2>
           <p className="mt-0.5 text-[11px] text-gray-400">
             Today's biggest stories, ranked by you. Hit one to keep it alive.
