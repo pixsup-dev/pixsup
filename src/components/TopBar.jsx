@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import CategoryChips from "@/components/CategoryChips";
 import NotificationBell from "@/components/NotificationBell";
-import { Zap, User, Compass, Plus, Home as HomeIcon, LogIn } from "lucide-react";
+import { Zap, User, Compass, Plus, Home as HomeIcon, LogIn, RefreshCw } from "lucide-react";
 
 export default function TopBar({
   hashtags,
@@ -22,6 +22,7 @@ export default function TopBar({
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
+  const [refreshing, setRefreshing] = useState(false);
 
   const goHome = () => {
     onHomeReset();
@@ -123,11 +124,21 @@ export default function TopBar({
         {isHome && (
           <div className="flex items-center gap-2">
             <button
-              onClick={onRotate}
-              title="Refresh Feed"
-              className="rounded-full bg-white/5 px-2 py-1 text-xs text-cyan-400 transition hover:bg-white/10"
+              onClick={async () => {
+                setRefreshing(true);
+                try {
+                  await onRotate();
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+              disabled={refreshing}
+              title="Refresh the feed"
+              aria-label="Refresh the feed"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-xs font-bold text-cyan-300 transition hover:bg-cyan-400/20 disabled:opacity-60"
             >
-              🔄
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <CategoryChips hashtags={hashtags} active={activeTag} onChange={onCategory} />
           </div>

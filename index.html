@@ -3,9 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0f17" />
     <title>Pixsup</title>
+    <!-- og:start (middleware.js swaps this block for per-post previews on /p/:id) -->
+    <meta name="description" content="Posts live only as long as people keep them alive. Hit it, react, keep it trending." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pixsup" />
+    <meta property="og:title" content="Pixsup" />
+    <meta property="og:description" content="Posts live only as long as people keep them alive. Hit it, react, keep it trending." />
+    <meta property="og:image" content="https://www.pixsup.com/og.png" />
+    <meta property="og:url" content="https://www.pixsup.com/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- og:end -->
   </head>
   <body>
     <div id="root"></div>

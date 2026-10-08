@@ -5,7 +5,7 @@ import { engagementScore } from "@/lib/engagement";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
-export default function TrendingBelt({ posts, onVote, onOpen }) {
+export default function TrendingBelt({ posts, onVote, onOpen, title = "24-Hour Trending Belt" }) {
   const ref = useRef(null);
   const [votedIds, setVotedIds] = useState(() => new Set());
 
@@ -30,7 +30,7 @@ export default function TrendingBelt({ posts, onVote, onOpen }) {
     <section className="mb-6">
       <div className="mb-3 flex items-center justify-between px-1">
         <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-orange-400">
-          <Flame className="h-3.5 w-3.5" /> 24-Hour Trending Belt
+          <Flame className="h-3.5 w-3.5" /> {title}
         </h2>
         <div className="flex gap-1.5">
           <button
@@ -68,7 +68,7 @@ export default function TrendingBelt({ posts, onVote, onOpen }) {
                 }`}
               >
                 {post.isPromoted && (
-                  <span className="absolute left-2 top-2 z-10 rounded-full bg-yellow-400 px-1.5 py-0.5 text-[8px] font-black text-black">
+                  <span className="absolute left-2 top-2 z-10 rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-black text-black">
                     PROMOTED
                   </span>
                 )}
@@ -81,7 +81,7 @@ export default function TrendingBelt({ posts, onVote, onOpen }) {
                       className="h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
-                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold text-yellow-400 backdrop-blur-sm">
+                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[11px] font-extrabold text-yellow-400 backdrop-blur-sm">
                       <Zap className="h-2.5 w-2.5" /> {post.hits || 0}
                     </span>
                   </div>

@@ -53,10 +53,21 @@ export default function Home() {
   const filtered = posts.filter(matchesFilter);
   const byScore = (a, b) => engagementScore(b) - engagementScore(a);
   const trending = filtered.filter((p) => p.is_trending).sort(byScore);
-  const beltPosts =
-    trending.length > 0 ? trending.slice(0, 10) : [...filtered].sort(byScore).slice(0, 8);
+  // Until something actually trends, the belt shows the most-engaged posts as
+  // "Hot right now" — never zero-engagement posts dressed up as trending.
+  const showingHot = trending.length === 0;
+  const beltPosts = showingHot
+    ? filtered.filter((p) => engagementScore(p) > 0).sort(byScore).slice(0, 8)
+    : trending.slice(0, 10);
+  const beltIds = new Set(beltPosts.map((p) => p.id));
   const rising = filtered
-    .filter((p) => !p.is_trending && engagementScore(p) >= 10 && engagementScore(p) < 20)
+    .filter(
+      (p) =>
+        !p.is_trending &&
+        !beltIds.has(p.id) &&
+        engagementScore(p) >= 10 &&
+        engagementScore(p) < 20
+    )
     .sort(byScore);
   const hourlyPosts = filtered.filter((p) => !p.is_trending);
 
@@ -83,8 +94,15 @@ export default function Home() {
       )}
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
-        <TrendingBelt posts={beltPosts} onVote={handleVote} onOpen={setActivePost} />
-        <RisingBelt posts={rising} onVote={handleVote} onOpen={setActivePost} />
+        <TrendingBelt
+          posts={beltPosts}
+          title={showingHot ? "Hot Right Now" : "24-Hour Trending Belt"}
+          onVote={handleVote}
+          onOpen={setActivePost}
+        />
+        {rising.length > 0 && (
+          <RisingBelt posts={rising} onVote={handleVote} onOpen={setActivePost} />
+        )}
         <PostGrid
           posts={hourlyPosts}
           loading={loading}

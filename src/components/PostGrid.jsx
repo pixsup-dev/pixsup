@@ -4,6 +4,7 @@ import { Bookmark, Zap, Hourglass } from "lucide-react";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import PostActionMenu from "@/components/PostActionMenu";
 import ShareButton from "@/components/ShareButton";
+import { formatRemaining } from "@/lib/time";
 
 function heatClass(hits) {
   if (hits >= 15) return "heatmap-gold";
@@ -21,9 +22,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
   const remaining = post.expires_at
     ? Math.max(0, new Date(post.expires_at) - now)
     : 0;
-  const mm = Math.floor(remaining / 60000);
-  const ss = Math.floor((remaining % 60000) / 1000);
-  const timer = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+  const timer = formatRemaining(remaining);
 
   const [radial, setRadial] = useState(false);
   const pressTimer = useRef(null);
@@ -81,23 +80,23 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
               <span className="absolute left-1.5 top-1.5 flex items-center gap-1">
-                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[8px] font-extrabold text-yellow-400">
-                  <Zap className="h-2 w-2" /> {post.hits || 0}
+                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold text-yellow-400">
+                  <Zap className="h-2.5 w-2.5" /> {post.hits || 0}
                 </span>
-                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 font-mono text-[8px] font-bold text-orange-400">
-                  <Hourglass className="h-2 w-2" /> {timer}
+                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 font-mono text-[10px] font-bold text-orange-400">
+                  <Hourglass className="h-2.5 w-2.5" /> {timer}
                 </span>
                 {post.isPromoted && (
-                  <span className="rounded-full bg-yellow-400 px-1.5 py-0.5 text-[8px] font-extrabold tracking-wide text-black shadow-md">
+                  <span className="rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
                     PROMOTED
                   </span>
                 )}
               </span>
-              <span className="absolute bottom-1 left-1.5 right-8 truncate text-[8px] font-semibold text-gray-200">
+              <span className="absolute bottom-1 left-1.5 right-8 truncate text-[11px] font-semibold text-gray-200">
                 {post.title || "Untitled"}
               </span>
               {reactionEntries.length > 0 && (
-                <span className="absolute bottom-1 right-1.5 flex gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[8px]">
+                <span className="absolute bottom-1 right-1.5 flex gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px]">
                   {reactionEntries.slice(0, 3).map(([em, c]) => (
                     <span key={em}>
                       {em}
@@ -143,7 +142,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-              <span className="absolute bottom-1 left-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[8px] font-extrabold text-cyan-300">
+              <span className="absolute bottom-1 left-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold text-cyan-300">
                 ⚡ {post.hits || 0} hits
               </span>
             </div>

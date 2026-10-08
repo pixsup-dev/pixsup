@@ -18,7 +18,7 @@ export default function ExploreTile({ post, onOpen }) {
         className="h-full w-full"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
-      <span className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-extrabold text-yellow-400 backdrop-blur-sm">
+      <span className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-extrabold text-yellow-400 backdrop-blur-sm">
         <Zap className="h-2 w-2" /> {post.hits || 0}
       </span>
       <button
@@ -35,7 +35,7 @@ export default function ExploreTile({ post, onOpen }) {
           }`}
         />
       </button>
-      <span className="absolute bottom-1 left-1.5 right-7 truncate text-left text-[8px] font-semibold text-gray-200">
+      <span className="absolute bottom-1 left-1.5 right-7 truncate text-left text-[10px] font-semibold text-gray-200">
         {post.title || "Untitled"}
       </span>
     </div>

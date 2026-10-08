@@ -56,7 +56,7 @@ export default function RisingBelt({ posts, onVote, onOpen }) {
                 key={post.id}
                 className="relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28] sm:w-56"
               >
-                <span className="absolute left-2 top-2 z-10 rounded-full bg-cyan-400 px-1.5 py-0.5 text-[8px] font-black text-black">
+                <span className="absolute left-2 top-2 z-10 rounded-full bg-cyan-400 px-1.5 py-0.5 text-[10px] font-black text-black">
                   RISING
                 </span>
                 <button onClick={() => onOpen(post)} className="block w-full text-left">
@@ -68,7 +68,7 @@ export default function RisingBelt({ posts, onVote, onOpen }) {
                       className="h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
-                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold text-cyan-300 backdrop-blur-sm">
+                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[11px] font-extrabold text-cyan-300 backdrop-blur-sm">
                       <Zap className="h-2.5 w-2.5" /> {post.hits || 0}
                     </span>
                   </div>

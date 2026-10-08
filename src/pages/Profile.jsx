@@ -6,6 +6,7 @@ import { Image } from "@/components/ui/image";
 import { Hourglass, Loader2, LogIn, Settings } from "lucide-react";
 import { displayNameFor } from "@/lib/engagement";
 import useSavedPosts from "@/hooks/useSavedPosts";
+import { formatRemaining } from "@/lib/time";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
@@ -107,9 +108,7 @@ export default function Profile() {
     const remaining = p.expires_at
       ? Math.max(0, new Date(p.expires_at).getTime() - now)
       : 0;
-    const mm = Math.floor(remaining / 60000);
-    const ss = Math.floor((remaining % 60000) / 1000);
-    return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+    return formatRemaining(remaining);
   };
 
   return (

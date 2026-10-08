@@ -10,11 +10,14 @@ import useSavedPosts from "@/hooks/useSavedPosts";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
+import { formatRemaining } from "@/lib/time";
+import useUsernames from "@/hooks/useUsernames";
 
 export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
   useBodyScrollLock();
   const { isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
+  const names = useUsernames([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
   const [text, setText] = useState("");
   const [voted, setVoted] = useState(false);
   const [current, setCurrent] = useState(post);
@@ -80,9 +83,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   const remaining = current.expires_at
     ? Math.max(0, new Date(current.expires_at) - now)
     : 0;
-  const mm = Math.floor(remaining / 60000);
-  const ss = Math.floor((remaining % 60000) / 1000);
-  const timer = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+  const timer = formatRemaining(remaining);
   const cat = categoryFor(current);
 
   return (
@@ -150,6 +151,13 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           <p className="text-sm font-medium text-gray-200">
             {current.title || "Untitled"}
           </p>
+          <p className="-mt-2 text-xs text-gray-400">
+            {current.isNews
+              ? `via ${current.guest_author_id || "the news"}`
+              : names[current.created_by_id]
+                ? `by @${names[current.created_by_id]}`
+                : null}
+          </p>
           {current.isNews && current.source_url && (
             <a
               href={current.source_url}
@@ -194,6 +202,9 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
                   key={c.id}
                   className="rounded-lg bg-white/5 px-3 py-2 text-sm text-gray-200"
                 >
+                  <span className="mr-1.5 text-xs font-bold text-cyan-300">
+                    @{names[c.created_by_id] || "member"}
+                  </span>
                   {c.text}
                 </div>
               ))}

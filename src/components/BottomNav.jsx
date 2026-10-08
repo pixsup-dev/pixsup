@@ -27,7 +27,7 @@ export default function BottomNav({ onUpload, onHome, unread }) {
           <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-orange-500" />
         )}
       </span>
-      <span className="text-[9px] font-bold">{label}</span>
+      <span className="text-[10px] font-bold">{label}</span>
     </button>
   );
 
