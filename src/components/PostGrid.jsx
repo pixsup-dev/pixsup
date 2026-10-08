@@ -143,7 +143,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
               <span className="absolute bottom-1 left-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold text-cyan-300">
-                ⚡ {post.hits || 0} hits
+                ⚡ {post.hits === 1 ? "1 hit" : `${post.hits || 0} hits`}
               </span>
             </div>
           </button>
