@@ -6,6 +6,7 @@ import PostActionMenu from "@/components/PostActionMenu";
 import ShareButton from "@/components/ShareButton";
 import { formatRemaining } from "@/lib/time";
 import { reactionPalette } from "@/lib/reactions";
+import TopComment from "@/components/TopComment";
 
 function heatClass(hits) {
   if (hits >= 15) return "heatmap-gold";
@@ -142,8 +143,19 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-              <span className="absolute bottom-1 left-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold text-cyan-300">
-                ⚡ {post.hits === 1 ? "1 hit" : `${post.hits || 0} hits`}
+              <span className="absolute bottom-1 left-1.5 right-1.5 flex flex-col items-start gap-1">
+                {post.saved_by_name && (
+                  <span className="max-w-full truncate rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-yellow-300">
+                    🦸 Saved by @{post.saved_by_name}
+                  </span>
+                )}
+                <TopComment
+                  post={post}
+                  className="max-w-full rounded-lg bg-black/70 px-1.5 py-0.5 text-[10px] text-gray-200"
+                />
+                <span className="rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold text-cyan-300">
+                  ⚡ {post.hits === 1 ? "1 hit" : `${post.hits || 0} hits`}
+                </span>
               </span>
             </div>
           </button>

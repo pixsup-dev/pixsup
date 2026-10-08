@@ -3,6 +3,7 @@ import { Globe2, Hourglass, Zap } from "lucide-react";
 import { Image } from "@/components/ui/image";
 import { formatRemaining } from "@/lib/time";
 import { moodSummary } from "@/lib/reactions";
+import TopComment from "@/components/TopComment";
 
 const JUST_IN_MS = 60 * 60 * 1000;
 
@@ -77,6 +78,7 @@ export default function WorldPulse({ posts, onVote, onOpen }) {
                   {post.title}
                 </p>
               </div>
+              <TopComment post={post} className="px-2 pt-2 text-[11px] text-gray-300" />
               <div className="flex items-center justify-between gap-2 p-2">
                 <span className="truncate text-[11px] text-gray-400">
                   {post.guest_author_id}

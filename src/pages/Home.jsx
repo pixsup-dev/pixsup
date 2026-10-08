@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { Loader2, ArrowDown } from "lucide-react";
 import TrendingBelt from "@/components/TrendingBelt";
 import WorldPulse from "@/components/WorldPulse";
+import RescueRow from "@/components/RescueRow";
 import RisingBelt from "@/components/RisingBelt";
 import PostGrid from "@/components/PostGrid";
 import PostDetail from "@/components/PostDetail";
@@ -11,7 +12,7 @@ import { isAllTag, keywordsForTag } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 
 export default function Home() {
-  const { posts, loading, loadPosts, category, query, handleVote, handleReact, openAuth } =
+  const { posts, loading, loadPosts, category, query, handleVote, handleReact, openAuth, user } =
     useOutletContext();
   const [activePost, setActivePost] = useState(null);
 
@@ -113,6 +114,13 @@ export default function Home() {
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
         <WorldPulse posts={pulse} onVote={handleVote} onOpen={setActivePost} />
+        <RescueRow
+          posts={filtered}
+          user={user}
+          onVote={handleVote}
+          onOpen={setActivePost}
+          onSignIn={openAuth}
+        />
         <TrendingBelt
           posts={beltPosts}
           title={showingHot ? "Hot Right Now" : "24-Hour Trending Belt"}

@@ -156,6 +156,8 @@ export default function AppLayout() {
         expires_at: updated.expires_at,
         is_trending: updated.is_trending,
         trending_expires_at: updated.trending_expires_at,
+        saved_by_name: updated.saved_by_name,
+        saved_at: updated.saved_at,
       };
     } catch (e) {
       console.error(e);

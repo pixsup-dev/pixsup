@@ -155,6 +155,11 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               : names[current.created_by_id]
                 ? `by @${names[current.created_by_id]}`
                 : null}
+            {current.saved_by_name && (
+              <span className="ml-2 font-bold text-yellow-300">
+                🦸 Saved by @{current.saved_by_name}
+              </span>
+            )}
           </p>
           {current.isNews && current.summary && (
             <p className="text-sm leading-relaxed text-gray-300">{current.summary}</p>

@@ -15,12 +15,14 @@ const rowText = (n) => {
       return "New comment on your post";
     case "trending":
       return "Your post hit the Trending belt";
+    case "rescue":
+      return `${n.actor_name || "Someone"} saved your post at the last minute!`;
     default:
       return "New activity on your post";
   }
 };
 
-const rowIcon = { hit: "⚡", reaction: "🎉", comment: "💬", trending: "🔥" };
+const rowIcon = { hit: "⚡", reaction: "🎉", comment: "💬", trending: "🔥", rescue: "🦸" };
 
 export default function NotificationBell({
   user,
