@@ -40,6 +40,7 @@ const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
 const DELETE_AFTER_MS = 2 * 24 * 60 * 60 * 1000; // purge expired news after 2 days
 const SUMMARY_MAX = 280;
+const LINK_BATCH = 25; // links per "already posted?" query, keeps URLs short
 
 type Feed = { source: string; topic: string; url: string };
 
@@ -211,12 +212,18 @@ Deno.serve(async (req) => {
     const [topic, top] = await Promise.all([fetchAll(FEEDS, now), fetchAll(TOP_FEEDS, now)]);
 
     // Which of these stories are already on Pixsup (live or recently expired)?
-    const candidateLinks = [...topic.perFeed.flat(), ...top.perFeed.flat()].map((s) => s.link);
-    const { data: seen, error: seenError } = candidateLinks.length
-      ? await admin.from("posts").select("id, source_url, top_story").in("source_url", candidateLinks)
-      : { data: [], error: null };
-    if (seenError) throw seenError;
-    const seenByLink = new Map((seen || []).map((p) => [p.source_url, p]));
+    // Checked in batches: one query with every link makes a URL too long to send.
+    const candidateLinks = [...new Set([...topic.perFeed.flat(), ...top.perFeed.flat()].map((s) => s.link))];
+    const seen: { id: string; source_url: string; top_story: boolean }[] = [];
+    for (let i = 0; i < candidateLinks.length; i += LINK_BATCH) {
+      const { data, error: seenError } = await admin
+        .from("posts")
+        .select("id, source_url, top_story")
+        .in("source_url", candidateLinks.slice(i, i + LINK_BATCH));
+      if (seenError) throw seenError;
+      seen.push(...data);
+    }
+    const seenByLink = new Map(seen.map((p) => [p.source_url, p]));
 
     // 1) World Pulse: the editors' top items from each top-story feed
     const topPicks = new Map<string, Story>();
