@@ -172,7 +172,8 @@ function absoluteUrl(pathOrUrl) {
 }
 
 const auth = {
-  // { id, email, full_name, display_name, username, role, banned, terms_accepted_at, created_date }
+  // { id, email, full_name, display_name, username, role, banned, terms_accepted_at,
+  //   lifelines, rescues, created_date }
   async me() {
     const session = await currentSession();
     if (!session) throw toError({ message: "Not authenticated" }, 401);
@@ -193,6 +194,8 @@ const auth = {
       role: profile?.role ?? "user",
       banned: profile?.banned ?? false,
       terms_accepted_at: profile?.terms_accepted_at ?? null,
+      lifelines: profile?.lifelines ?? 0,
+      rescues: profile?.rescues ?? 0,
       created_date: user.created_at,
     };
   },

@@ -98,6 +98,11 @@
   box-shadow: 0 0 10px 1px rgba(249, 115, 22, 0.5);
   border: 2px solid #f97316;
 }
+/* after the heatmaps so the Survivor's crown ring always wins */
+.survivor-tile {
+  box-shadow: 0 0 16px 3px rgba(250, 204, 21, 0.7);
+  border: 2px solid #facc15;
+}
 
 /* 3D tile flip */
 .flip-card { perspective: 1000px; }

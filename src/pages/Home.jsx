@@ -88,7 +88,21 @@ export default function Home() {
         engagementScore(p) < 20
     )
     .sort(byScore);
+  // The Survivor: the member post the crowd has kept alive longest (past its
+  // first hour, without trending). It wears the crown and leads the feed.
+  const survivor = filtered
+    .filter(
+      (p) =>
+        !p.is_trending &&
+        !p.isNews &&
+        Date.now() - new Date(p.created_date).getTime() > 60 * 60 * 1000
+    )
+    .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))[0];
   const hourlyPosts = filtered.filter((p) => !p.is_trending);
+  if (survivor) {
+    hourlyPosts.splice(hourlyPosts.indexOf(survivor), 1);
+    hourlyPosts.unshift(survivor);
+  }
 
   return (
     <div
@@ -133,6 +147,7 @@ export default function Home() {
         <PostGrid
           posts={hourlyPosts}
           loading={loading}
+          survivorId={survivor?.id}
           onOpen={setActivePost}
           onReact={handleReact}
         />

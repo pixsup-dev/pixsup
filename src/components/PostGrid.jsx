@@ -14,7 +14,7 @@ function heatClass(hits) {
   return "";
 }
 
-function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSave }) {
+function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, onToggleSave }) {
   const palette = reactionPalette(post);
   const media = post.thumbnail_url || post.media_url;
   const remaining = post.expires_at
@@ -59,7 +59,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
     <div
       className={`flip-card rolling-tile relative aspect-square ${heatClass(
         post.hits || 0
-      )} ${flipped ? "flipped" : ""}`}
+      )} ${flipped ? "flipped" : ""} ${survivor ? "survivor-tile" : ""}`}
       style={{ animationDelay: `${(index % 6) * 1}s` }}
       onPointerDown={startPress}
       onPointerUp={cancelPress}
@@ -93,6 +93,11 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
                   </span>
                 )}
               </span>
+              {survivor && (
+                <span className="absolute left-1.5 top-7 rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
+                  👑 SURVIVOR
+                </span>
+              )}
               <span className="absolute bottom-1 left-1.5 right-8 truncate text-[11px] font-semibold text-gray-200">
                 {post.title || "Untitled"}
               </span>
@@ -194,7 +199,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
   );
 }
 
-export default function PostGrid({ posts, loading, onOpen, onReact }) {
+export default function PostGrid({ posts, loading, survivorId, onOpen, onReact }) {
   const { isSaved, toggleSave } = useSavedPosts();
   const [now, setNow] = useState(() => Date.now());
   const [flippedIds, setFlippedIds] = useState(() => new Set());
@@ -234,6 +239,7 @@ export default function PostGrid({ posts, loading, onOpen, onReact }) {
       index={i}
       now={now}
       flipped={flippedIds.has(p.id)}
+      survivor={p.id === survivorId}
       onOpen={onOpen}
       onReact={onReact}
       isSaved={isSaved(p.id)}

@@ -10,8 +10,11 @@ import { formatRemaining } from "@/lib/time";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
-// Milestone badges: hit counts, trending status and decay-timer mastery
+// Milestone badges: hit counts, rescues, trending status and decay-timer mastery
 const BADGES = [
+  { icon: "🦸", label: "Hero", earned: ({ rescues }) => rescues >= 1 },
+  { icon: "🛟", label: "Lifeguard", earned: ({ rescues }) => rescues >= 10 },
+  { icon: "💛", label: "100 Lifelines", earned: ({ lifelines }) => lifelines >= 100 },
   { icon: "🎯", label: "First Hit", earned: ({ totalHits }) => totalHits >= 1 },
   { icon: "🔥", label: "On Fire", earned: ({ totalHits }) => totalHits >= 50 },
   {
@@ -33,10 +36,9 @@ const BADGES = [
 ];
 
 export default function Profile() {
-  const { user, openAuth, posts } = useOutletContext();
+  const { user, openAuth, posts, refreshUser } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [allMine, setAllMine] = useState([]);
-  const [hitsGiven, setHitsGiven] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [tab, setTab] = useState("uploads");
   const { saved } = useSavedPosts();
@@ -46,9 +48,16 @@ export default function Profile() {
     return () => clearInterval(t);
   }, []);
 
+  // Lifelines and rescues change with every hit; fetch fresh counts on open
   useEffect(() => {
-    if (user === undefined) return;
-    if (user === null) {
+    refreshUser?.();
+  }, []);
+
+  // undefined while auth loads, null for guests; only re-fetch when it changes
+  const userId = user === undefined ? undefined : user?.id ?? null;
+  useEffect(() => {
+    if (userId === undefined) return;
+    if (userId === null) {
       setLoading(false);
       return;
     }
@@ -56,19 +65,11 @@ export default function Profile() {
     (async () => {
       try {
         const mine = await base44.entities.Post.filter(
-          { created_by_id: user.id },
+          { created_by_id: userId },
           "-created_date",
           100
         );
-        const votes = await base44.entities.Vote.filter(
-          { created_by_id: user.id },
-          "-created_date",
-          200
-        );
-        if (alive) {
-          setAllMine(mine);
-          setHitsGiven(votes.length);
-        }
+        if (alive) setAllMine(mine);
       } catch (e) {
         console.error(e);
       } finally {
@@ -78,13 +79,17 @@ export default function Profile() {
     return () => {
       alive = false;
     };
-  }, [user]);
+  }, [userId]);
 
   const live = allMine.filter(
     (p) => !p.expires_at || new Date(p.expires_at).getTime() > now
   );
   const totalHits = allMine.reduce((s, p) => s + (p.hits || 0), 0);
-  const badges = BADGES.filter((b) => b.earned({ mine: allMine, totalHits }));
+  const lifelines = user?.lifelines || 0;
+  const rescues = user?.rescues || 0;
+  const badges = BADGES.filter((b) =>
+    b.earned({ mine: allMine, totalHits, lifelines, rescues })
+  );
   const savedPosts = (posts || []).filter((p) => saved.includes(p.id));
 
   const tabClass = (active) =>
@@ -169,9 +174,9 @@ export default function Profile() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/5 bg-white/5 p-3 text-center">
-              <p className="text-lg font-black text-cyan-400">{hitsLabel(hitsGiven)}</p>
+              <p className="text-lg font-black text-yellow-300">💛 {lifelines}</p>
               <p className="text-[10px] uppercase tracking-wider text-gray-400">
-                Hits Given
+                Lifelines{rescues > 0 && ` · 🦸 ${rescues}`}
               </p>
             </div>
           </div>
