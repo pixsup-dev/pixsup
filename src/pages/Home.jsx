@@ -65,7 +65,7 @@ export default function Home() {
           (a, b) =>
             byScore(a, b) || new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
         )
-        .slice(0, 5)
+        .slice(0, 10)
     : [];
   const pulseIds = new Set(pulse.map((p) => p.id));
 
