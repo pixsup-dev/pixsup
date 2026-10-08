@@ -58,7 +58,8 @@ export function topHashtags(posts, limit = 7) {
   const bump = (raw) => {
     const t = String(raw || "").trim();
     const body = t.startsWith("#") ? t.slice(1) : t;
-    if (body.length < 3 || !/^[a-z0-9]+$/i.test(body)) return;
+    // "#All" is always the first chip, so never count it as a live tag too
+    if (body.length < 3 || !/^[a-z0-9]+$/i.test(body) || body.toLowerCase() === "all") return;
     const display = body.charAt(0).toUpperCase() + body.slice(1);
     const key = body.toLowerCase();
     if (!counts[key]) counts[key] = { tag: `#${display}`, n: 0 };
