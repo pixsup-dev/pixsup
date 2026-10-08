@@ -1,18 +1,10 @@
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { XMLParser } from "npm:fast-xml-parser@4.5.0";
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { admin } from "../_shared/supabase.ts";
 
 // Live news ingestion from public RSS/Atom feeds. Each story becomes a news
 // tile (headline + image + link back to the publisher) that expires after a
 // few hours. Runs on a schedule (Supabase Cron) and when the app's grid runs low.
-//
-// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected by the platform;
-// the service role key never leaves the server.
-const admin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  { auth: { persistSession: false } },
-);
 
 // Every feed here was checked to ship an image with each story
 const FEEDS = [
@@ -188,8 +180,9 @@ Deno.serve(async (req) => {
       media_url: s.image,
       thumbnail_url: s.image,
       media_type: "image",
-      category: "news",
-      hashtags: ["news", "All", s.topic],
+      // category drives the grid's topic filter (#Tech, #Sports…); isNews marks it as news
+      category: s.topic,
+      hashtags: ["#News", `#${s.topic}`],
       guest_author_id: s.source,
       source_url: s.link,
       isNews: true,

@@ -3,25 +3,21 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 
-export default function DeleteAccountModal({ user, onClose }) {
+export default function DeleteAccountModal({ onClose }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   const confirmDelete = async () => {
     setBusy(true);
+    setError("");
     try {
-      // Permanently remove all of the user's content across the app
-      await Promise.all([
-        base44.entities.Post.deleteMany({ created_by_id: user.id }),
-        base44.entities.Vote.deleteMany({ created_by_id: user.id }),
-        base44.entities.Comment.deleteMany({ created_by_id: user.id }),
-        base44.entities.Flag.deleteMany({ created_by_id: user.id }),
-        base44.entities.Notification.deleteMany({ recipient_id: user.id }),
-      ]);
-      // Anonymize what remains of the profile, then end the session
-      await base44.auth.updateMe({ display_name: "Deleted User" });
+      // Server-side: deletes the login itself, which cascades to every post,
+      // vote, comment, report and notification, and removes uploaded files
+      await base44.functions.invoke("deleteAccount");
       await base44.auth.logout("/");
     } catch (e) {
       console.error(e);
+      setError("Couldn't delete your account — please try again.");
       setBusy(false);
     }
   };
@@ -55,6 +51,7 @@ export default function DeleteAccountModal({ user, onClose }) {
           Are you sure? This will permanently delete your account, posts, and profile
           data. This action cannot be undone.
         </p>
+        {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
         <div className="flex gap-2">
           <button
             onClick={onClose}

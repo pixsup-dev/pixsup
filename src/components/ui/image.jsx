@@ -11,8 +11,13 @@ import {
   parseWixMediaUrl,
 } from "./image-helpers"
 
+// Inline so a missing image never depends on a third-party host
 const FALLBACK_IMAGE_URL =
-  "https://static.wixstatic.com/media/12d367_4f26ccd17f8f4e3a8958306ea08c2332~mv2.png"
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#151c28"/>' +
+      '<path d="M18 44l10-12 7 8 5-6 6 10z" fill="#334155"/><circle cx="40" cy="24" r="4" fill="#334155"/></svg>'
+  )
 
 const ImageWrapper = React.forwardRef(({ aspectRatio, className, style, children }, ref) => (
   <span

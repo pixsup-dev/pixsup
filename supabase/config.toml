@@ -1,11 +1,15 @@
 # Used by `supabase functions deploy`.
 project_id = "qcouyhzvapgknfvrpakt"
 
-# Both functions are called by guests too, so the gateway shouldn't demand a
-# signed-in user's JWT. Neither trusts the caller: analyzePostMedia is a pure
-# stub and seedNewsPosts only tops the grid up to a capped minimum.
+# The gateway's JWT check is off for every function: each one decides access
+# itself. analyzePostMedia and deleteAccount verify the signed-in user in code
+# (callerOf), and seedNewsPosts is safe to call by anyone (cron and the app's
+# refresh button) because it only tops the grid up to a capped amount.
 [functions.analyzePostMedia]
 verify_jwt = false
 
 [functions.seedNewsPosts]
+verify_jwt = false
+
+[functions.deleteAccount]
 verify_jwt = false

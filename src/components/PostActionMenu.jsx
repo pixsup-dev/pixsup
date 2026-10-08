@@ -3,6 +3,7 @@ import { MoreVertical, Flag, Ban, X, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useBlocklist, authorKeyOf } from "@/hooks/useBlocklist";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/lib/AuthContext";
 
 const REASONS = ["Spam", "Inappropriate", "Harassment"];
 
@@ -15,6 +16,7 @@ export default function PostActionMenu({ post, className = "" }) {
   const btnRef = useRef(null);
   const { block } = useBlocklist();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   const toggle = (e) => {
     e.stopPropagation();
@@ -82,8 +84,12 @@ export default function PostActionMenu({ post, className = "" }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setReporting(true);
                 setOpen(false);
+                if (!isAuthenticated) {
+                  toast({ title: "Sign in to report posts" });
+                  return;
+                }
+                setReporting(true);
               }}
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-gray-200 transition hover:bg-white/10"
             >

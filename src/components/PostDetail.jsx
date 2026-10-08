@@ -9,8 +9,10 @@ import PostActionMenu from "@/components/PostActionMenu";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import { createNotification } from "@/lib/notify";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/lib/AuthContext";
 
-export default function PostDetail({ post, onClose, onVote, onReact }) {
+export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
+  const { isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
   const [voted, setVoted] = useState(false);
@@ -216,21 +218,30 @@ export default function PostDetail({ post, onClose, onVote, onReact }) {
                 <p className="text-xs text-gray-500">No comments yet</p>
               )}
             </div>
-            <div className="flex gap-2">
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addComment()}
-                placeholder="Add a comment..."
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-              />
+            {isAuthenticated ? (
+              <div className="flex gap-2">
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addComment()}
+                  placeholder="Add a comment..."
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
+                />
+                <button
+                  onClick={addComment}
+                  className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95"
+                >
+                  Send
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={addComment}
-                className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95"
+                onClick={onSignIn}
+                className="spring-tap w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200 transition hover:bg-white/10 active:scale-95"
               >
-                Send
+                Sign in to comment
               </button>
-            </div>
+            )}
           </div>
         </div>
       </motion.div>

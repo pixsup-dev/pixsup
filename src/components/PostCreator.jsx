@@ -15,7 +15,7 @@ export default function PostCreator({ onClose, onCreated }) {
   const fileInputRef = useRef(null);
   const { toast } = useToast();
 
-  // Check the session when the modal opens — members post as themselves, guests post anonymously
+  // Check the session when the modal opens — only members can post
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -40,11 +40,12 @@ export default function PostCreator({ onClose, onCreated }) {
 
   const submit = async () => {
     if (!file) return;
+    if (!user) {
+      toast({ title: "Sign in to post", variant: "destructive" });
+      return;
+    }
     setBusy(true);
     try {
-      // Guests publish too — a temporary author ID is attached instead of failing on auth
-      const guestAuthorId = user ? null : `guest-${Math.random().toString(36).slice(2, 10)}`;
-
       setStatus("Uploading media…");
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const mediaType = file.type.startsWith("video") ? "video" : "image";
@@ -55,32 +56,36 @@ export default function PostCreator({ onClose, onCreated }) {
       let emojis = [];
 
       if (mediaType === "image") {
+        // Images must pass the AI safety scan — the database rejects unapproved
+        // images, so if the scan is unavailable there's no point publishing.
+        setStatus("AI safety scan, auto-title & tagging…");
+        let analysis;
         try {
-          setStatus("AI safety scan, auto-title & tagging…");
           const res = await base44.functions.invoke("analyzePostMedia", { file_url });
-          const analysis = res.data || {};
-          if (analysis.safe === false) {
-            toast({
-              title: "Content Flagged",
-              description: "This image can't be posted — it was flagged by AI moderation.",
-              variant: "destructive",
-            });
-            setFile(null);
-            setPreview(null);
-            return;
-          }
-          category = analysis.category || null;
-          hashtags = analysis.hashtags || [];
-          aiTitle = analysis.title || null;
-          emojis = analysis.emojis || [];
+          analysis = res.data || {};
         } catch (e) {
-          // AI scan unavailable (e.g. integration credits exhausted) — keep publishing:
-          // the caption becomes the title, auto-tagging is simply skipped.
-          category = null;
-          hashtags = [];
-          aiTitle = null;
-          emojis = [];
+          console.error(e);
+          toast({
+            title: "Couldn't check this image",
+            description: "The safety scan is unavailable right now — please try again in a moment.",
+            variant: "destructive",
+          });
+          return;
         }
+        if (analysis.safe === false) {
+          toast({
+            title: "Content Flagged",
+            description: "This image can't be posted — it was flagged by AI moderation.",
+            variant: "destructive",
+          });
+          setFile(null);
+          setPreview(null);
+          return;
+        }
+        category = analysis.category || null;
+        hashtags = analysis.hashtags || [];
+        aiTitle = analysis.title || null;
+        emojis = analysis.emojis || [];
       }
 
       setStatus("Publishing to the Live Grid…");
@@ -93,24 +98,23 @@ export default function PostCreator({ onClose, onCreated }) {
         media_url: file_url,
         media_type: mediaType,
         thumbnail_url: file_url,
-        guest_author_id: guestAuthorId || "guest",
         hits: 0,
         is_trending: false,
         expires_at: expiresAt,
-        category: "news",
-        hashtags: ["news", "All", "all", "Pixsup", "pixsup"],
+        category,
+        hashtags,
         emojis,
       });
       toast({ title: "Published to the Live Grid!" });
       onCreated();
       onClose();
     } catch (e) {
-      const msg = String(e?.message || e || "");
-      const creditIssue = /402|credit|payment/i.test(msg);
+      console.error(e);
+      const tooBig = /exceeded the maximum|too large|413/i.test(String(e?.message || ""));
       toast({
         title: "Upload failed",
-        description: creditIssue
-          ? "File storage uses integration credits — upgrade your plan or wait for the monthly reset."
+        description: tooBig
+          ? "That file is too big — the limit is 50 MB."
           : "Something went wrong — please try again.",
         variant: "destructive",
       });

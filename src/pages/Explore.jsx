@@ -9,7 +9,7 @@ import { topHashtags } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 
 export default function Explore() {
-  const { posts, category, setCategory, handleVote, handleReact } =
+  const { posts, category, setCategory, handleVote, handleReact, openAuth } =
     useOutletContext();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
@@ -107,6 +107,7 @@ export default function Explore() {
             onClose={() => setActivePost(null)}
             onVote={handleVote}
             onReact={handleReact}
+            onSignIn={openAuth}
           />
         )}
       </AnimatePresence>

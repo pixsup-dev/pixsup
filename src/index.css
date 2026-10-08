@@ -118,13 +118,9 @@
   scrollbar-width: none;
 }
 
-@keyframes gridPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.01); }
-}
-.rolling-tile {
-  animation: gridPulse 6s ease-in-out infinite;
-}
+/* .rolling-tile intentionally has no transform animation: scaling every tile
+   while its faces use backface-visibility made images flicker, and a
+   transformed tile traps the fixed-position report menu inside it. */
 
 .heatmap-gold {
   box-shadow: 0 0 12px 2px rgba(234, 179, 8, 0.6);
@@ -151,6 +147,7 @@
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   border-radius: 0.75rem;
   overflow: hidden;
 }

@@ -10,7 +10,7 @@ import { isAllTag, keywordsForTag } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 
 export default function Home() {
-  const { posts, loading, loadPosts, category, query, handleVote, handleReact } =
+  const { posts, loading, loadPosts, category, query, handleVote, handleReact, openAuth } =
     useOutletContext();
   const [activePost, setActivePost] = useState(null);
 
@@ -100,6 +100,7 @@ export default function Home() {
             onClose={() => setActivePost(null)}
             onVote={handleVote}
             onReact={handleReact}
+            onSignIn={openAuth}
           />
         )}
       </AnimatePresence>

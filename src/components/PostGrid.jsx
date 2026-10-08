@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Image } from "@/components/ui/image";
-import { Bookmark, Loader2, Zap, Hourglass } from "lucide-react";
+import { Bookmark, Zap, Hourglass } from "lucide-react";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import SponsoredTile from "@/components/SponsoredTile";
 import PostActionMenu from "@/components/PostActionMenu";

@@ -215,8 +215,8 @@ export default function AppLayout() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Anyone can upload — guests publish anonymously under a temporary author ID
-  const openUpload = () => setCreatorOpen(true);
+  // Posting needs an account — guests are asked to sign in first
+  const openUpload = () => (user ? setCreatorOpen(true) : setAuthOpen(true));
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#0b0f17] pb-20 font-body text-gray-100 lg:pb-6">
