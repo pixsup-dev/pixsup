@@ -24,14 +24,11 @@ export default function DeleteAccountModal({ onClose }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/95 p-4"
     >
       <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-red-400/30 bg-[#151c28] p-5"
       >

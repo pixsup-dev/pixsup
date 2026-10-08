@@ -49,14 +49,11 @@ export default function AuthModal({ onClose }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
     >
       <motion.div
-        initial={{ scale: 0.95, y: 10 }}
-        animate={{ scale: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
         className="relative w-full max-w-sm rounded-2xl border border-white/15 bg-[#151c28]/95 p-6 shadow-[0_0_40px_rgba(34,211,238,0.15)]"
       >
