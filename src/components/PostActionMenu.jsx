@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MoreVertical, Flag, Ban, X, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useBlocklist, authorKeyOf } from "@/hooks/useBlocklist";
@@ -62,13 +63,15 @@ export default function PostActionMenu({ post, className = "" }) {
         ref={btnRef}
         onClick={toggle}
         onPointerDown={(e) => e.stopPropagation()}
-        className={`flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-gray-300 backdrop-blur-sm transition hover:text-white ${className}`}
+        className={`flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-gray-300 transition hover:text-white ${className}`}
         aria-label="Post actions"
       >
         <MoreVertical className="h-3.5 w-3.5" />
       </button>
 
-      {open && (
+      {/* Portaled to <body>: inside a 3D flip tile, position:fixed would be
+          relative to the tile instead of the screen */}
+      {open && createPortal(
         <>
           <div
             className="fixed inset-0 z-[55]"
@@ -102,10 +105,11 @@ export default function PostActionMenu({ post, className = "" }) {
               <Ban className="h-3.5 w-3.5 text-orange-400" /> Block User
             </button>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
-      {reporting && (
+      {reporting && createPortal(
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
           onPointerDown={(e) => e.stopPropagation()}
@@ -148,7 +152,8 @@ export default function PostActionMenu({ post, className = "" }) {
               )}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

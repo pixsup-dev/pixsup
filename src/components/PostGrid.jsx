@@ -82,10 +82,10 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
               <span className="absolute left-1.5 top-1.5 flex items-center gap-1">
-                <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-extrabold text-yellow-400 backdrop-blur-sm">
+                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[8px] font-extrabold text-yellow-400">
                   <Zap className="h-2 w-2" /> {post.hits || 0}
                 </span>
-                <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 font-mono text-[8px] font-bold text-orange-400 backdrop-blur-sm">
+                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 font-mono text-[8px] font-bold text-orange-400">
                   <Hourglass className="h-2 w-2" /> {timer}
                 </span>
                 {post.isPromoted && (
@@ -98,7 +98,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
                 {post.title || "Untitled"}
               </span>
               {reactionEntries.length > 0 && (
-                <span className="absolute bottom-1 right-1.5 flex gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] backdrop-blur-sm">
+                <span className="absolute bottom-1 right-1.5 flex gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[8px]">
                   {reactionEntries.slice(0, 3).map(([em, c]) => (
                     <span key={em}>
                       {em}
@@ -114,7 +114,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
           </div>
           <ShareButton
             post={post}
-            className="absolute bottom-7 right-1.5 z-20 rounded-full bg-black/60 p-1 text-gray-300 backdrop-blur-sm transition hover:text-cyan-300 active:scale-95"
+            className="absolute bottom-7 right-1.5 z-20 rounded-full bg-black/70 p-1 text-gray-300 transition hover:text-cyan-300 active:scale-95"
           />
           <button
             aria-label="Save post"
@@ -122,7 +122,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
               e.stopPropagation();
               onToggleSave(post.id);
             }}
-            className="absolute bottom-[3.25rem] right-1.5 z-20 rounded-full bg-black/60 p-1 text-gray-300 backdrop-blur-sm transition hover:text-cyan-300 active:scale-95"
+            className="absolute bottom-[3.25rem] right-1.5 z-20 rounded-full bg-black/70 p-1 text-gray-300 transition hover:text-cyan-300 active:scale-95"
           >
             <Bookmark
               className={`h-3 w-3 ${
@@ -144,7 +144,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-              <span className="absolute bottom-1 left-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-extrabold text-cyan-300 backdrop-blur-sm">
+              <span className="absolute bottom-1 left-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[8px] font-extrabold text-cyan-300">
                 ⚡ {post.hits || 0} hits
               </span>
             </div>
@@ -171,7 +171,7 @@ function Tile({ post, index, now, flipped, onOpen, onReact, isSaved, onToggleSav
                   e.stopPropagation();
                   react(emoji);
                 }}
-                className="spring-tap absolute bottom-3 left-1/2 z-30 rounded-full border border-cyan-400/40 bg-[#151c28]/95 p-1.5 text-sm shadow-[0_0_10px_rgba(34,211,238,0.5)] backdrop-blur-md active:scale-95"
+                className="spring-tap absolute bottom-3 left-1/2 z-30 rounded-full border border-cyan-400/40 bg-[#151c28]/95 p-1.5 text-sm shadow-[0_0_10px_rgba(34,211,238,0.5)] active:scale-95"
                 style={{ transform: `translate(calc(-50% + ${x}px), ${-y}px)` }}
               >
                 {emoji}

@@ -151,6 +151,9 @@
   border-radius: 0.75rem;
   overflow: hidden;
 }
+/* An explicit front rotation keeps both faces on stable GPU layers (stops
+   WebKit/Chrome flashing the faces when tile content repaints each second) */
+.flip-card-front { transform: rotateY(0deg); }
 .flip-card-back { transform: rotateY(180deg); }
 
 /* Micro-fluidity: tactile spring for taps, entrances and flips */
