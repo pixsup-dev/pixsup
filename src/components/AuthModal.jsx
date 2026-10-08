@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { X, Apple, Chrome, Mail, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
 // Turn on once Sign in with Apple is configured in Supabase (needed for the iOS app)
 const APPLE_SIGN_IN_ENABLED = false;
 
 export default function AuthModal({ onClose }) {
+  useBodyScrollLock();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [emailMode, setEmailMode] = useState(false);

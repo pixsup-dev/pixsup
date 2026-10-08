@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { AlertTriangle, Loader2, X } from "lucide-react";
+import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
 export default function DeleteAccountModal({ onClose }) {
+  useBodyScrollLock();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 

@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { X, UploadCloud, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { compressImage } from "@/lib/compressImage";
+import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
 export default function PostCreator({ onClose, onCreated }) {
+  useBodyScrollLock();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [title, setTitle] = useState("");

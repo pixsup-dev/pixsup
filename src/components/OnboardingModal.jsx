@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AtSign, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
 // Shown once to every new member (email or Google): pick the public username
 // that appears on notifications, and confirm age 13+ and the Terms if they
 // haven't already at sign-up. Can't be dismissed — only completed or signed out.
 export default function OnboardingModal({ user, onDone }) {
+  useBodyScrollLock();
   const needsTerms = !user.terms_accepted_at;
   const [username, setUsername] = useState("");
   const [accepted, setAccepted] = useState(false);

@@ -9,8 +9,10 @@ import PostActionMenu from "@/components/PostActionMenu";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
+import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
 export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
+  useBodyScrollLock();
   const { isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
@@ -91,7 +93,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl"
+        className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl"
       >
         <button
           onClick={onClose}
@@ -113,7 +115,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               src={current.media_url}
               alt={current.title}
               fittingType="fill"
-              className="aspect-[4/3] w-full object-cover"
+              className="aspect-[4/3] max-h-[42vh] w-full object-cover"
             />
           )}
         </div>
