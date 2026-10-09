@@ -3,8 +3,9 @@ import { Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { postUrl } from "@/lib/site";
 
-// Native Web Share pointing at the post's permalink, with a Copy Link fallback
-export default function ShareButton({ post, className }) {
+// Native Web Share pointing at the post's permalink, with a Copy Link fallback.
+// Shows a share icon unless children (e.g. a label) are given.
+export default function ShareButton({ post, className, children }) {
   const { toast } = useToast();
 
   const share = async (e) => {
@@ -32,7 +33,7 @@ export default function ShareButton({ post, className }) {
 
   return (
     <button onClick={share} title="Share" className={className}>
-      <Share2 className="h-3 w-3" />
+      {children || <Share2 className="h-3 w-3" />}
     </button>
   );
 }
