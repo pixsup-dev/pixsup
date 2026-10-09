@@ -15,7 +15,15 @@ const arrowClass =
 // "The people's front page": the biggest world stories right now, ranked by
 // how hard people are keeping them alive. Every story dies when its timer
 // runs out unless someone hits it.
-export default function WorldPulse({ posts, title = "World Pulse", onVote, onOpen }) {
+export default function WorldPulse({
+  posts,
+  title = "World Pulse",
+  topics = [],
+  topic,
+  onTopic,
+  onVote,
+  onOpen,
+}) {
   const [now, setNow] = useState(() => Date.now());
   const [votedIds, setVotedIds] = useState(() => new Set());
   const scroller = useRef(null);
@@ -34,8 +42,9 @@ export default function WorldPulse({ posts, title = "World Pulse", onVote, onOpe
     check();
     const ro = new ResizeObserver(check);
     ro.observe(el);
+    el.scrollLeft = 0; // a new topic starts at #1
     return () => ro.disconnect();
-  }, [posts.length]);
+  }, [posts.length, topic]);
 
   if (!posts.length) return null;
 
@@ -152,6 +161,24 @@ export default function WorldPulse({ posts, title = "World Pulse", onVote, onOpe
           </button>
         </div>
       </div>
+
+      {topics.length > 1 && (
+        <div className="no-scrollbar mb-3 flex gap-1.5 overflow-x-auto px-1">
+          {topics.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => onTopic?.(t.id)}
+              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                t.id === topic
+                  ? "bg-cyan-400 text-black"
+                  : "border border-white/10 bg-white/5 text-gray-300 hover:text-white"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Phones: one swipeable row. Wider screens: two rows that scroll together. */}
       <div ref={scroller} className="no-scrollbar snap-x snap-mandatory overflow-x-auto px-1 py-1">

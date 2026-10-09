@@ -12,10 +12,27 @@ import { isAllTag, keywordsForTag } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 import { isSpotlit } from "@/lib/boosts";
 
+// News topics for the pulse tabs (ids match the news engine's categories)
+const NEWS_TOPICS = [
+  { id: "World", label: "🌍 World" },
+  { id: "Tech", label: "💻 Tech" },
+  { id: "Sports", label: "⚽ Sports" },
+  { id: "Business", label: "💼 Business" },
+  { id: "Health", label: "🩺 Health" },
+  { id: "Science", label: "🔬 Science" },
+  { id: "Entertainment", label: "🎬 Entertainment" },
+  { id: "Gaming", label: "🎮 Gaming" },
+  { id: "Nature", label: "🌿 Nature" },
+  { id: "Travel", label: "✈️ Travel" },
+  { id: "Food", label: "🍜 Food" },
+  { id: "Art", label: "🎨 Art" },
+];
+
 export default function Home() {
   const { posts, loading, loadPosts, category, query, handleVote, handleReact, openAuth, user } =
     useOutletContext();
   const [activePost, setActivePost] = useState(null);
+  const [pulseTopic, setPulseTopic] = useState("World");
 
   // Native pull-to-refresh (mobile + tablet)
   const [pull, setPull] = useState(0);
@@ -59,10 +76,24 @@ export default function Home() {
   // Any other topic gets its own pulse (e.g. "Tech Pulse") from that topic's news.
   const pulseTag = category.toLowerCase();
   const worldPulse = isAllTag(category) || pulseTag === "#news" || pulseTag === "#world";
-  const pulseTitle = worldPulse ? "World Pulse" : `${category.replace("#", "")} Pulse`;
+  // On the main feed, tabs switch the pulse between news topics that have live stories
+  const searchHit = (p) => !q || (p.title || "").toLowerCase().includes(q);
+  const pulseTopics = worldPulse
+    ? NEWS_TOPICS.filter(
+        (t) => t.id === "World" || posts.some((p) => p.isNews && !p.top_story && p.category === t.id)
+      )
+    : [];
+  const topic = pulseTopics.some((t) => t.id === pulseTopic) ? pulseTopic : "World";
+  const pulseTitle = worldPulse
+    ? topic === "World"
+      ? "World Pulse"
+      : `${topic} Pulse`
+    : `${category.replace("#", "")} Pulse`;
   const pulse = (
     worldPulse
-      ? posts.filter((p) => p.top_story && (!q || (p.title || "").toLowerCase().includes(q)))
+      ? topic === "World"
+        ? posts.filter((p) => p.top_story && searchHit(p))
+        : posts.filter((p) => p.isNews && p.category === topic && searchHit(p))
       : filtered.filter((p) => p.isNews)
   )
     .sort(
@@ -137,7 +168,15 @@ export default function Home() {
       )}
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
-        <WorldPulse posts={pulse} title={pulseTitle} onVote={handleVote} onOpen={setActivePost} />
+        <WorldPulse
+          posts={pulse}
+          title={pulseTitle}
+          topics={pulseTopics}
+          topic={topic}
+          onTopic={setPulseTopic}
+          onVote={handleVote}
+          onOpen={setActivePost}
+        />
         <RescueRow
           posts={filtered}
           user={user}

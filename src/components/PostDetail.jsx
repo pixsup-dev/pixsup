@@ -151,12 +151,22 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               className="max-h-80 w-full bg-black object-contain"
             />
           ) : (
-            <Image
-              src={current.media_url}
-              alt={current.title}
-              fittingType="fill"
-              className="aspect-[4/3] max-h-[42vh] w-full object-cover"
-            />
+            // The whole picture, never cropped: tall or wide photos sit on a
+            // blurred copy of themselves instead of being zoomed to fill
+            <div className="relative flex h-[42vh] max-h-[440px] items-center justify-center overflow-hidden bg-black">
+              <img
+                src={current.media_url}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+              />
+              <Image
+                src={current.media_url}
+                alt={current.title}
+                fittingType="fit"
+                className="relative h-full w-full object-contain"
+              />
+            </div>
           )}
         </div>
 
