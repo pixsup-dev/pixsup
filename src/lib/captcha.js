@@ -3,7 +3,7 @@
 // protection is on (Authentication → Attack Protection). Usually invisible;
 // a checkbox appears only when Cloudflare isn't sure.
 // The site key is public by design; the secret key lives only in Supabase.
-const SITE_KEY = "";
+const SITE_KEY = "0x4AAAAAAFSkWCJpJC5Z3bVP";
 
 let scriptPromise = null;
 
