@@ -110,6 +110,12 @@
   border: 2px solid #facc15;
 }
 
+/* Breaking news: a red frame (after the heatmaps, so it always shows) */
+.breaking-tile {
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 14px 2px rgba(239, 68, 68, 0.45);
+}
+
 /* Last 60 seconds of a post's life: a red heartbeat glow */
 @keyframes lastBreath {
   0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.9), 0 0 10px 2px rgba(239, 68, 68, 0.35); }

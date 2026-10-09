@@ -14,6 +14,7 @@ import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
 import BoostPanel from "@/components/BoostPanel";
 import EmojiBurst from "@/components/EmojiBurst";
+import { isBreaking } from "@/lib/breaking";
 import ExplainIt from "@/components/ExplainIt";
 import StoryCardButton from "@/components/StoryCardButton";
 import useMoodTrends, { moodLabel } from "@/hooks/useMoodTrends";
@@ -195,9 +196,15 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
 
         <div className="no-scrollbar space-y-3 p-4 md:w-[400px] md:shrink-0 md:overflow-y-auto md:overscroll-contain md:border-l md:border-white/10 md:pt-14">
           <div className="flex items-center justify-between">
-            <span className="rounded-full border border-cyan-800 bg-cyan-950/60 px-2.5 py-0.5 text-xs font-bold uppercase text-cyan-400">
-              {cat || "Pixsup"}
-            </span>
+            {isBreaking(current, now) ? (
+              <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-black uppercase tracking-wide text-white">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> Breaking news
+              </span>
+            ) : (
+              <span className="rounded-full border border-cyan-800 bg-cyan-950/60 px-2.5 py-0.5 text-xs font-bold uppercase text-cyan-400">
+                {cat || "Pixsup"}
+              </span>
+            )}
             <div className="flex items-center gap-2">
               <PostActionMenu post={current} />
               <button

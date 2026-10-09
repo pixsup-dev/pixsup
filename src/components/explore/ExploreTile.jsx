@@ -3,6 +3,7 @@ import { Image } from "@/components/ui/image";
 import { Bookmark, Hourglass, Zap } from "lucide-react";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import EmojiBurst from "@/components/EmojiBurst";
+import { isBreaking } from "@/lib/breaking";
 import LastBreath, { inLastBreath } from "@/components/LastBreath";
 import { formatRemaining } from "@/lib/time";
 
@@ -20,7 +21,7 @@ export default function ExploreTile({ post, now, big = false, onOpen }) {
       onClick={() => onOpen(post)}
       className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-[#151c28] ${
         big ? "col-span-2 row-span-2" : "aspect-square"
-      } ${dying ? "border-red-500/60" : post.isNews ? "news-tile" : "border-white/5"} ${
+      } ${dying ? "border-red-500/60" : isBreaking(post, now) ? "breaking-tile" : post.isNews ? "news-tile" : "border-white/5"} ${
         inLastBreath(post, remaining) ? "last-breath" : ""
       }`}
     >
@@ -51,6 +52,11 @@ export default function ExploreTile({ post, now, big = false, onOpen }) {
       </span>
 
       <span className="absolute bottom-1.5 left-2 right-8 text-left">
+        {isBreaking(post, now) && (
+          <span className="mb-1 inline-flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-white" /> BREAKING
+          </span>
+        )}
         <span
           className={`block font-bold text-white ${
             big ? "line-clamp-2 text-sm leading-snug" : "truncate text-[10px]"

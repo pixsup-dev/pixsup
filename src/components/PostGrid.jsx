@@ -9,6 +9,7 @@ import { reactionPalette } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
 import { isSpotlit } from "@/lib/boosts";
 import EmojiBurst from "@/components/EmojiBurst";
+import { isBreaking } from "@/lib/breaking";
 import LastBreath, { inLastBreath } from "@/components/LastBreath";
 
 function heatClass(hits) {
@@ -60,7 +61,9 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
 
   return (
     <div
-      className={`flip-card rolling-tile relative aspect-square ${post.isNews ? "news-tile rounded-xl" : ""} ${heatClass(
+      className={`flip-card rolling-tile relative aspect-square ${
+        isBreaking(post, now) ? "breaking-tile rounded-xl" : post.isNews ? "news-tile rounded-xl" : ""
+      } ${heatClass(
         post.hits || 0
       )} ${flipped ? "flipped" : ""} ${survivor ? "survivor-tile" : ""} ${
         inLastBreath(post, remaining) ? "last-breath rounded-xl" : ""
@@ -114,6 +117,11 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                     {isSpotlit(post, now) ? "🔦 SPOTLIGHT" : "⚡ BOOSTED"}
                   </span>
                 )
+              )}
+              {isBreaking(post, now) && (
+                <span className="absolute bottom-6 left-1.5 flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-white" /> BREAKING
+                </span>
               )}
               <span className="absolute bottom-1 left-1.5 right-8 truncate text-[11px] font-semibold text-gray-200">
                 {post.title || "Untitled"}

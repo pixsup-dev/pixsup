@@ -67,6 +67,7 @@ const SUMMARY_MAX = 280;
 // When the caps are full, fresh stories replace news nobody has engaged with
 // that has been up at least this long (engaged news keeps its full life)
 const RETIRE_AFTER_MS = 60 * 60 * 1000;
+const BREAKING_WINDOW_MS = 90 * 60 * 1000; // how fresh a top story must be to count as breaking
 const LINK_BATCH = 25; // links per "already posted?" query, keeps URLs short
 
 type Feed = { source: string; topic: string; url: string };
@@ -194,7 +195,12 @@ function toRow(s: Story, expiresAt: string, topStory: boolean) {
     media_type: "image",
     // category drives the grid's topic filter (#Tech, #Sports…); isNews marks it as news
     category: s.topic,
-    hashtags: ["#News", `#${s.topic}`],
+    // A top story the publisher released in the last 90 minutes is breaking news
+    hashtags: [
+      "#News",
+      `#${s.topic}`,
+      ...(topStory && Date.now() - s.published < BREAKING_WINDOW_MS ? ["#Breaking"] : []),
+    ],
     guest_author_id: s.source,
     source_url: s.link,
     isNews: true,

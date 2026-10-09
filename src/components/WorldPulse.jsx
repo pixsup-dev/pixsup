@@ -5,6 +5,7 @@ import { formatRemaining } from "@/lib/time";
 import { moodSummary } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
 import EmojiBurst from "@/components/EmojiBurst";
+import { isBreaking } from "@/lib/breaking";
 import useMoodTrends, { moodLabel } from "@/hooks/useMoodTrends";
 
 const JUST_IN_MS = 60 * 60 * 1000;
@@ -70,6 +71,7 @@ export default function WorldPulse({
 
   const renderCard = (post, i, wide = false) => {
     const remaining = post.expires_at ? new Date(post.expires_at).getTime() - now : 0;
+    const breaking = isBreaking(post, now);
     const justIn = now - new Date(post.created_date).getTime() < JUST_IN_MS;
     const mood = moodSummary(post.reactions, 1)?.[0];
     const voted = votedIds.has(post.id);
@@ -77,7 +79,9 @@ export default function WorldPulse({
       <button
         key={post.id}
         onClick={() => onOpen(post)}
-        className={`relative shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28] text-left ${
+        className={`relative shrink-0 snap-start overflow-hidden rounded-xl border bg-[#151c28] text-left ${
+          breaking ? "breaking-tile" : "border-cyan-400/20"
+        } ${
           wide ? "" : "w-64"
         }`}
         style={
@@ -101,13 +105,19 @@ export default function WorldPulse({
             <span className="rounded-md bg-white px-1.5 py-0.5 text-[11px] font-black text-black">
               #{i + 1}
             </span>
-            <span
-              className={`rounded-md px-1.5 py-0.5 text-[10px] font-black tracking-wide ${
-                justIn ? "bg-red-500 text-white" : "bg-cyan-400 text-black"
-              }`}
-            >
-              {justIn ? "JUST IN" : "TOP STORY"}
-            </span>
+            {breaking ? (
+              <span className="flex items-center gap-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-black tracking-wide text-white">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> BREAKING
+              </span>
+            ) : (
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[10px] font-black tracking-wide ${
+                  justIn ? "bg-amber-400 text-black" : "bg-cyan-400 text-black"
+                }`}
+              >
+                {justIn ? "JUST IN" : "TOP STORY"}
+              </span>
+            )}
           </span>
           <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 font-mono text-[11px] font-bold text-orange-300">
             <Hourglass className="h-3 w-3" /> {formatRemaining(remaining)}
