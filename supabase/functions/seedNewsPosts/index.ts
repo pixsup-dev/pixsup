@@ -1,6 +1,7 @@
 import { XMLParser } from "npm:fast-xml-parser@4.5.0";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { admin } from "../_shared/supabase.ts";
+import { ensureChallenges } from "../_shared/challenges.ts";
 
 // Live news ingestion from public RSS/Atom feeds. Each story becomes a news
 // tile (headline + summary + image + link back to the publisher) that expires
@@ -208,6 +209,16 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
+
+    // Piggybacks on this every-30-minutes job: keep the Daily Challenge
+    // planned a week ahead (does nothing once the week is filled)
+    let challengesPlanned = 0;
+    try {
+      challengesPlanned = await ensureChallenges();
+    } catch (e) {
+      console.error("challenge planning failed:", e);
+    }
+
     const minActive = Math.min(Math.max(Number(body.min_active) || 8, 1), 50);
     const now = Date.now();
     const nowIso = new Date(now).toISOString();
@@ -251,7 +262,7 @@ Deno.serve(async (req) => {
     const lastNewsAt = Math.max(0, ...live.filter((p) => p.isNews).map((p) => Date.parse(p.created_date)));
     const gridLow = live.length < minActive;
     if (!gridLow && now - lastNewsAt < MIN_RUN_GAP_MS) {
-      return json({ success: true, seeded: 0, active: live.length, reason: "up to date" });
+      return json({ success: true, seeded: 0, active: live.length, reason: "up to date", challengesPlanned });
     }
 
     const [topic, top] = await Promise.all([fetchAll(FEEDS, now), fetchAll(TOP_FEEDS, now)]);
@@ -333,6 +344,7 @@ Deno.serve(async (req) => {
       topStories: newTop.length,
       promoted: promoteIds.length,
       retired: retireIds.length,
+      challengesPlanned,
       active: live.length - retireIds.length + rows.length,
       failed: [...topic.failed, ...top.failed],
     });
