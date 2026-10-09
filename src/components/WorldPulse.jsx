@@ -55,8 +55,8 @@ export default function WorldPulse({
     posts.length >= TWO_ROWS_FROM
       ? [posts.slice(0, half).map((p, i) => [p, i]), posts.slice(half).map((p, i) => [p, half + i])]
       : [posts.map((p, i) => [p, i])];
-  // Wider screens fit 2/3/4 cards across (fewer if there are fewer columns),
-  // so the cards always fill the row; extra columns scroll.
+  // Wider screens fit 2/3/4 cards across. With only a few stories the cards
+  // grow to fill the row, but never wider than a third of it.
   const columns = rows[0].length;
 
   const vote = async (e, post) => {
@@ -81,7 +81,7 @@ export default function WorldPulse({
           wide
             ? {
                 width:
-                  "calc((100% - (min(var(--cols), var(--fit)) - 1) * 0.75rem) / min(var(--cols), var(--fit)))",
+                  "calc((100% - (var(--k) - 1) * 0.75rem) / var(--k))",
               }
             : undefined
         }
@@ -183,7 +183,7 @@ export default function WorldPulse({
       {/* Phones: one swipeable row. Wider screens: two rows that scroll together. */}
       <div ref={scroller} className="no-scrollbar snap-x snap-mandatory overflow-x-auto px-1 py-1">
         <div
-          className="hidden flex-col gap-3 [--fit:2] sm:flex lg:[--fit:3] xl:[--fit:4]"
+          className="hidden flex-col gap-3 [--fit:2] [--k:min(var(--fit),max(var(--cols),3))] sm:flex lg:[--fit:3] xl:[--fit:4]"
           style={{ "--cols": columns }}
         >
           {rows.map((row, r) => (

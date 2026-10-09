@@ -27,6 +27,26 @@ const FEEDS = [
   { source: "BBC News", topic: "Business", url: "https://feeds.bbci.co.uk/news/business/rss.xml" },
   { source: "BBC News", topic: "Health", url: "https://feeds.bbci.co.uk/news/health/rss.xml" },
   { source: "BBC News", topic: "Entertainment", url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" },
+  { source: "BBC Sport", topic: "Sports", url: "https://feeds.bbci.co.uk/sport/football/rss.xml" },
+  { source: "The Guardian", topic: "Sports", url: "https://www.theguardian.com/sport/rss" },
+  { source: "Ars Technica", topic: "Tech", url: "https://feeds.arstechnica.com/arstechnica/index" },
+  { source: "The Guardian", topic: "Tech", url: "https://www.theguardian.com/technology/rss" },
+  { source: "The Guardian", topic: "Science", url: "https://www.theguardian.com/science/rss" },
+  { source: "The New York Times", topic: "Science", url: "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml" },
+  { source: "The New York Times", topic: "Health", url: "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml" },
+  { source: "The Guardian", topic: "Health", url: "https://www.theguardian.com/society/health/rss" },
+  { source: "The Guardian", topic: "Business", url: "https://www.theguardian.com/business/rss" },
+  { source: "The New York Times", topic: "Business", url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" },
+  { source: "The Guardian", topic: "Entertainment", url: "https://www.theguardian.com/film/rss" },
+  { source: "The Guardian", topic: "Entertainment", url: "https://www.theguardian.com/music/rss" },
+  { source: "Variety", topic: "Entertainment", url: "https://variety.com/feed/" },
+  { source: "The Guardian", topic: "Gaming", url: "https://www.theguardian.com/games/rss" },
+  { source: "Kotaku", topic: "Gaming", url: "https://kotaku.com/rss" },
+  { source: "The New York Times", topic: "Nature", url: "https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml" },
+  { source: "The New York Times", topic: "Travel", url: "https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml" },
+  { source: "The New York Times", topic: "Food", url: "https://rss.nytimes.com/services/xml/rss/nyt/DiningandWine.xml" },
+  { source: "The Guardian", topic: "Food", url: "https://www.theguardian.com/lifeandstyle/food-and-drink/rss" },
+  { source: "The New York Times", topic: "Art", url: "https://rss.nytimes.com/services/xml/rss/nyt/ArtandDesign.xml" },
 ];
 
 const TOP_FEEDS = [
@@ -37,7 +57,7 @@ const TOP_FEEDS = [
 
 const NEWS_LIFETIME_MS = 6 * 60 * 60 * 1000; // a news tile lives 6 hours
 const MAX_STORY_AGE_MS = 24 * 60 * 60 * 1000; // ignore stories older than a day
-const MAX_LIVE_NEWS = 40; // never let topic news crowd out member posts
+const MAX_LIVE_NEWS = 70; // never let topic news crowd out member posts
 const MAX_LIVE_TOP = 10; // World Pulse candidates alive at once
 const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
