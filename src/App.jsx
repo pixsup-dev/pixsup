@@ -10,6 +10,7 @@ import Hits from '@/pages/Hits';
 import Profile from '@/pages/Profile';
 import Explore from '@/pages/Explore';
 import Settings from '@/pages/Settings';
+import Unsubscribe from '@/pages/Unsubscribe';
 import AppLayout from '@/components/AppLayout';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
       <Route path="/explore" element={<Explore />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/p/:id" element={<PostLink />} />
       <Route path="/admin" element={<Admin />} />
     </Route>

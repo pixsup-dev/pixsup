@@ -178,7 +178,7 @@ function absoluteUrl(pathOrUrl) {
 
 const auth = {
   // { id, email, full_name, display_name, username, role, banned, terms_accepted_at,
-  //   lifelines, rescues, created_date }
+  //   lifelines, rescues, city, morning_pulse, created_date }
   async me() {
     const session = await currentSession();
     if (!session) throw toError({ message: "Not authenticated" }, 401);
@@ -201,11 +201,13 @@ const auth = {
       terms_accepted_at: profile?.terms_accepted_at ?? null,
       lifelines: profile?.lifelines ?? 0,
       rescues: profile?.rescues ?? 0,
+      city: profile?.city ?? null,
+      morning_pulse: profile?.morning_pulse ?? false,
       created_date: user.created_at,
     };
   },
 
-  // Only profile columns the user may edit (display_name) are writable
+  // Only profile columns the user may edit (display_name, city, morning_pulse) are writable
   async updateMe(data) {
     const session = await currentSession();
     if (!session) throw toError({ message: "Not authenticated" }, 401);

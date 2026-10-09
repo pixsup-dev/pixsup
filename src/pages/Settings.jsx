@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useBlocklist, handleLabel } from "@/hooks/useBlocklist";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
+import PreferencesSection from "@/components/PreferencesSection";
 import { base44 } from "@/api/base44Client";
 import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert, Sparkles, LogOut } from "lucide-react";
 
@@ -16,7 +17,7 @@ const GUIDELINES = [
 ];
 
 export default function Settings() {
-  const { user, openWelcome } = useOutletContext();
+  const { user, openWelcome, refreshUser } = useOutletContext();
   const { blocked, unblock } = useBlocklist();
   const [deleting, setDeleting] = useState(false);
 
@@ -68,6 +69,8 @@ export default function Settings() {
           </div>
         </div>
       </section>
+
+      {user && <PreferencesSection user={user} onSaved={refreshUser} />}
 
       {/* Blocked Users */}
       <section className="mb-6">

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Compass, Search, TrendingUp, X } from "lucide-react";
 import TopicCard from "@/components/explore/TopicCard";
@@ -18,6 +18,7 @@ const SORTS = [
   { id: "new", label: "✨ Newest", filter: () => true, sort: (a, b) => time(b.created_date) - time(a.created_date) },
   { id: "community", label: "👥 Community", filter: (p) => !p.isNews, sort: byScore },
   { id: "news", label: "📰 News", filter: (p) => p.isNews, sort: byScore },
+  { id: "city", label: "📍 Near me", filter: () => true, sort: byScore },
 ];
 
 const hasTag = (p, tag) => {
@@ -29,7 +30,8 @@ const hasTag = (p, tag) => {
 };
 
 export default function Explore() {
-  const { posts, category, setCategory, handleVote, handleReact, openAuth } = useOutletContext();
+  const { posts, user, category, setCategory, handleVote, handleReact, openAuth } = useOutletContext();
+  const myCity = (user?.city || "").toLowerCase();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [sortId, setSortId] = useState("hot");
@@ -63,8 +65,9 @@ export default function Explore() {
       (p.category || "").toLowerCase().includes(query) ||
       (p.hashtags || []).some((h) => h.toLowerCase().includes(query)) ||
       (p.guest_author_id || "").toLowerCase().includes(query);
-    return posts.filter((p) => sort.filter(p) && matches(p)).sort(sort.sort);
-  }, [posts, query, sort]);
+    const inCity = (p) => sort.id !== "city" || (!!myCity && (p.city || "").toLowerCase() === myCity);
+    return posts.filter((p) => sort.filter(p) && inCity(p) && matches(p)).sort(sort.sort);
+  }, [posts, query, sort, myCity]);
 
   const shown = results.slice(0, visible);
 
@@ -143,9 +146,21 @@ export default function Explore() {
 
         {shown.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-sm text-gray-400">
-            {sortId === "community" && !query
-              ? "No community posts live right now. Be the first. Tap + to post."
-              : "Nothing matches right now."}
+            {sortId === "city" && !myCity ? (
+              <>
+                Set your city in{" "}
+                <Link to="/settings" className="font-bold text-cyan-300 underline">
+                  Settings
+                </Link>{" "}
+                to see what's alive near you.
+              </>
+            ) : sortId === "city" ? (
+              `Nothing live in ${user.city} yet. Post something and put ${user.city} on the map! 📍`
+            ) : sortId === "community" && !query ? (
+              "No community posts live right now. Be the first. Tap + to post."
+            ) : (
+              "Nothing matches right now."
+            )}
           </p>
         ) : (
           <>
