@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 
-const tomorrow = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+// Challenge days run on US Eastern time
+const tomorrow = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
-// Admins: schedule the Daily Challenge for any day (UTC), optionally sponsored.
+// Admins: schedule the Daily Challenge for any day (US Eastern), optionally sponsored.
 // Days left unscheduled get the next prompt from the built-in rotation.
 export default function ChallengeScheduler() {
   const { toast } = useToast();
@@ -62,7 +64,7 @@ export default function ChallengeScheduler() {
         </div>
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] text-gray-500">
-            Tag: # then 2–30 letters or numbers, no spaces. Days are UTC. Unscheduled days use the built-in rotation.
+            Tag: # then 2–30 letters or numbers, no spaces. Days run on US Eastern time. Unscheduled days use the built-in rotation.
           </p>
           <button
             disabled={busy || !validTag || !form.prompt.trim()}

@@ -22,7 +22,8 @@ const SCHEMA = {
   },
 };
 
-const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+// Challenge days run on US Eastern time (see challenge_today() in the database)
+const isoDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(d);
 
 export async function ensureChallenges(): Promise<number> {
   if (!GEMINI_API_KEY) return 0;
