@@ -39,13 +39,23 @@ const STEPS = [
     ),
   },
   {
+    icon: "📸",
+    title: "Today's challenge",
+    body: "One photo prompt for everyone, every day. Enter once, so make it your best shot. The most-loved entry wears the 👑. Share a story card to get friends hitting it.",
+    visual: (
+      <span className="rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-3 py-1 text-sm font-black text-white">
+        📸 Join the challenge
+      </span>
+    ),
+  },
+  {
     icon: "🌍",
     title: "The people's front page",
-    body: "World Pulse ranks today's biggest news by what you keep alive. Vote in polls, drop a 🔥 hot take, or jump into a live chat that vanishes in 10 minutes.",
+    body: "World Pulse ranks today's news by what you keep alive. Tap ✨ Explain it for the story in 3 sentences, vote in polls, drop a 🔥 hot take, or join a live chat that vanishes in 10 minutes.",
     visual: (
       <span className="flex gap-1.5 text-xs font-bold">
-        <span className="rounded-md bg-white px-1.5 py-0.5 text-black">#1</span>
-        <span className="rounded-md bg-red-500 px-1.5 py-0.5 text-white">JUST IN</span>
+        <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-white">● BREAKING</span>
+        <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-black">JUST IN</span>
         <span className="rounded-md bg-violet-500 px-1.5 py-0.5 text-white">📊 Poll</span>
       </span>
     ),
