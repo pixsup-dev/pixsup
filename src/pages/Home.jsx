@@ -205,7 +205,7 @@ export default function Home() {
       <AnimatePresence>
         {activePost && (
           <PostDetail
-            post={activePost}
+            post={posts.find((p) => p.id === activePost.id) || activePost}
             onClose={() => setActivePost(null)}
             onVote={handleVote}
             onReact={handleReact}

@@ -8,6 +8,7 @@ import { formatRemaining } from "@/lib/time";
 import { reactionPalette } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
 import { isSpotlit } from "@/lib/boosts";
+import EmojiBurst from "@/components/EmojiBurst";
 
 function heatClass(hits) {
   if (hits >= 15) return "heatmap-gold";
@@ -178,6 +179,8 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
           </button>
         </div>
       </div>
+
+      <EmojiBurst post={post} size="text-xl" />
 
       {radial && (
         <div

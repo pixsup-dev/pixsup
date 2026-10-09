@@ -4,6 +4,7 @@ import { Image } from "@/components/ui/image";
 import { formatRemaining } from "@/lib/time";
 import { moodSummary } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
+import EmojiBurst from "@/components/EmojiBurst";
 
 const JUST_IN_MS = 60 * 60 * 1000;
 // From this many stories, wider screens show two rows (top half on the first)
@@ -87,6 +88,7 @@ export default function WorldPulse({
         }
       >
         <div className="relative aspect-video">
+          <EmojiBurst post={post} />
           <Image
             src={post.thumbnail_url || post.media_url}
             alt={post.title}

@@ -13,6 +13,7 @@ import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
 import BoostPanel from "@/components/BoostPanel";
+import EmojiBurst from "@/components/EmojiBurst";
 import PollCard from "@/components/PollCard";
 import LiveChat from "@/components/LiveChat";
 import AdminPollEditor from "@/components/AdminPollEditor";
@@ -38,6 +39,11 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
 
   const palette = reactionPalette(current);
   const mood = current.isNews ? moodSummary(current.reactions) : null;
+
+  // Live counts: other people's hits, reactions and comments arrive via the feed
+  useEffect(() => {
+    setCurrent((c) => (c.id === post.id ? { ...c, ...post } : post));
+  }, [post]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -143,6 +149,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
         </button>
 
         <div className="relative">
+          <EmojiBurst post={current} size="text-3xl" />
           {current.media_type === "video" ? (
             <video
               src={current.media_url}
