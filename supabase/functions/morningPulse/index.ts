@@ -85,11 +85,10 @@ Deno.serve(async () => {
   try {
     if (!RESEND_API_KEY) return json({ sent: 0, reason: "RESEND_API_KEY not set" });
 
-    // Once per UTC day: claim today before sending
+    // Once per UTC day
     const today = new Date().toISOString().slice(0, 10);
     const { data: last } = await admin.from("app_settings").select("value").eq("key", "morning_pulse_last_sent").maybeSingle();
     if (last?.value === today) return json({ sent: 0, reason: "already sent today" });
-    await admin.from("app_settings").upsert({ key: "morning_pulse_last_sent", value: today });
 
     const { data: subscribers, error: subError } = await admin
       .from("profiles")
@@ -127,6 +126,10 @@ Deno.serve(async () => {
         headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
       });
     }
+
+    // Claim today right before sending, so a repeat call can't send twice
+    if (!messages.length) return json({ sent: 0, reason: "no subscriber emails" });
+    await admin.from("app_settings").upsert({ key: "morning_pulse_last_sent", value: today });
 
     let sent = 0;
     for (let i = 0; i < messages.length; i += 100) {
