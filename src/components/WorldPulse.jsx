@@ -146,6 +146,7 @@ export default function WorldPulse({
             tabIndex={0}
             onClick={(e) => vote(e, post)}
             onKeyDown={(e) => e.key === "Enter" && vote(e, post)}
+            data-tour="hit"
             className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold transition ${
               voted
                 ? "bg-white/10 text-gray-400"

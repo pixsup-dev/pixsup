@@ -110,7 +110,13 @@ type Story = {
   published: number;
   source: string;
   topic: string;
+  rank: number; // position in the publisher's feed (0 = their lead story)
 };
+
+// Sponsored posts some feeds mix in with the news (betting promos, coupons…)
+const PROMO =
+  /promo code|bonus code|sportsbook|\bbet \$|get \$\d|coupon|\d+% off|deals? of the day|best .{0,30}deals\b|sponsored|\bsale\b.*\$|shop (now|the)\b/i;
+const MAX_TOP_PER_SOURCE = 3; // keeps one outlet from taking over World Pulse
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -225,7 +231,17 @@ async function fetchFeed(feed: Feed, now: number): Promise<Story[]> {
     const published = Date.parse(text(item.pubDate) || text(item.published) || text(item.updated)) || now;
     if (!title || !link.startsWith("https://") || !image.startsWith("https://")) continue;
     if (now - published > MAX_STORY_AGE_MS) continue;
-    stories.push({ title, summary: summaryOf(item, title), link, image, published, source: feed.source, topic: feed.topic });
+    if (PROMO.test(title)) continue;
+    stories.push({
+      title,
+      summary: summaryOf(item, title),
+      link,
+      image,
+      published,
+      source: feed.source,
+      topic: feed.topic,
+      rank: stories.length,
+    });
   }
   return stories;
 }
@@ -247,11 +263,11 @@ function toRow(s: Story, expiresAt: string, topStory: boolean) {
     media_type: "image",
     // category drives the grid's topic filter (#Tech, #Sports…); isNews marks it as news
     category: s.topic,
-    // A top story the publisher released in the last 90 minutes is breaking news
+    // Breaking news: a publisher's lead story, released in the last 90 minutes
     hashtags: [
       "#News",
       `#${s.topic}`,
-      ...(topStory && Date.now() - s.published < BREAKING_WINDOW_MS ? ["#Breaking"] : []),
+      ...(topStory && s.rank === 0 && Date.now() - s.published < BREAKING_WINDOW_MS ? ["#Breaking"] : []),
     ],
     guest_author_id: s.source,
     source_url: s.link,
@@ -291,7 +307,7 @@ Deno.serve(async (req) => {
 
     const { data: live, error } = await admin
       .from("posts")
-      .select("id, title, isNews, top_story, created_date, hits, reactions, comment_count, is_trending, boosted_at")
+      .select("id, title, guest_author_id, isNews, top_story, created_date, hits, reactions, comment_count, is_trending, boosted_at")
       .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
       .limit(1000);
     if (error) throw error;
@@ -361,7 +377,14 @@ Deno.serve(async (req) => {
       liveHeadlines.push(k);
       return false;
     };
-    const freshTop = [...topPicks.values()].filter((s) => !seenByLink.has(s.link) && !isRepeat(s));
+    // at most MAX_TOP_PER_SOURCE live top stories per outlet
+    const topBySource = new Map<string, number>();
+    for (const p of liveTop) topBySource.set(p.guest_author_id || "", (topBySource.get(p.guest_author_id || "") || 0) + 1);
+    const freshTop = [...topPicks.values()].filter((s) => {
+      if (seenByLink.has(s.link) || (topBySource.get(s.source) || 0) >= MAX_TOP_PER_SOURCE || isRepeat(s)) return false;
+      topBySource.set(s.source, (topBySource.get(s.source) || 0) + 1);
+      return true;
+    });
     const topRoom = makeRoom(
       freshTop.length,
       Math.max(0, MAX_LIVE_TOP - liveTop.length - promoteIds.length),

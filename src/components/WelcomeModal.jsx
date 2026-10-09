@@ -1,162 +1,243 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
-import useBodyScrollLock from "@/hooks/useBodyScrollLock";
+import { ArrowDown, ArrowUp, X } from "lucide-react";
 
 export const WELCOME_SEEN_KEY = "pixsup_welcome_seen";
 
+// The guided tour: it dims the screen except the real button it's talking
+// about, with a bouncing arrow and a short card. Steps whose button isn't on
+// screen (e.g. no challenge today) are skipped. Shown once on a first visit to
+// the feed, and from Settings → "How Pixsup works" any time.
 const STEPS = [
   {
     icon: "⏳",
-    title: "Every post is dying",
-    body: "Posts start with 1 hour to live. When the timer hits zero, they're gone for good. No archives, no old feeds.",
-    visual: (
-      <span className="rounded-full bg-black/60 px-3 py-1 font-mono text-lg font-black text-orange-300">
-        ⏳ 59:42
-      </span>
-    ),
+    title: "Welcome to Pixsup",
+    body: "Every post here is dying. Each one has a timer, and when it hits zero it's gone for good. You decide what stays alive.",
   },
   {
+    target: "tile",
+    icon: "⏳",
+    title: "Every post has a timer",
+    body: "The ⏳ shows how long it has left. Tap a post to open it. Press and hold one to react with an emoji (+3 min).",
+  },
+  {
+    target: "hit",
     icon: "⚡",
-    title: "You keep them alive",
-    body: "Every interaction buys a post more time. Enough love and it hits the 24-hour Trending belt.",
-    visual: (
-      <span className="flex flex-wrap justify-center gap-1.5 text-xs font-bold">
-        <span className="rounded-full bg-cyan-400/15 px-2.5 py-1 text-cyan-300">⚡ Hit +5 min</span>
-        <span className="rounded-full bg-orange-400/15 px-2.5 py-1 text-orange-300">😂 React +3 min</span>
-        <span className="rounded-full bg-violet-400/15 px-2.5 py-1 text-violet-300">💬 Comment +10 min</span>
-      </span>
-    ),
+    title: "Keep it alive",
+    body: "Tap Keep alive (or HIT inside a post) to give it 5 more minutes. A comment gives 10.",
   },
   {
-    icon: "🦸",
-    title: "Rescue the dying",
-    body: "Save a post in its last 5 minutes and it says \"Saved by\" you. Earn 💛 Lifelines, badges, and help a post win the 👑 Survivor crown.",
-    visual: (
-      <span className="rounded-full bg-red-600 px-3 py-1 font-mono text-lg font-black text-white">
-        02:13 · Rescue!
-      </span>
-    ),
+    target: "belt",
+    icon: "🔥",
+    title: "The 24-Hour Trending Belt",
+    body: "Posts the crowd loves enough get promoted here and live for a whole day.",
   },
   {
+    target: "challenge",
     icon: "📸",
     title: "Today's challenge",
-    body: "One photo prompt for everyone, every day. Enter once, so make it your best shot. The most-loved entry wears the 👑. Share a story card to get friends hitting it.",
-    visual: (
-      <span className="rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-3 py-1 text-sm font-black text-white">
-        📸 Join the challenge
-      </span>
-    ),
+    body: "One photo prompt for everyone, every day. Tap here to join with one photo.",
   },
   {
-    icon: "🌍",
-    title: "The people's front page",
-    body: "World Pulse ranks today's news by what you keep alive. Tap ✨ Explain it for the story in 3 sentences, vote in polls, drop a 🔥 hot take, or join a live chat that vanishes in 10 minutes.",
-    visual: (
-      <span className="flex gap-1.5 text-xs font-bold">
-        <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-white">● BREAKING</span>
-        <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-black">JUST IN</span>
-        <span className="rounded-md bg-violet-500 px-1.5 py-0.5 text-white">📊 Poll</span>
-      </span>
-    ),
+    target: "upload",
+    icon: "➕",
+    title: "Post your own photo",
+    body: "Tap here to post. Then share it, because it only lives while people keep it alive!",
+  },
+  {
+    target: "profile",
+    icon: "👤",
+    title: "Your profile",
+    body: "Your stats, badges and settings. Turn on phone alerts there so you can save your posts in time.",
+  },
+  {
+    icon: "🚀",
+    title: "You're ready!",
+    body: "Hit what you love, save what's dying, and post something worth keeping alive.",
+    last: true,
   },
 ];
 
-// The "how Pixsup works" walkthrough: shown once on a first visit, and from
-// Settings any time after.
+const GUTTER = 12;
+const PAD = 6; // space around the highlighted button
+
+// The first matching element that's actually visible (phone and computer
+// layouts have different buttons with the same marker)
+function findTarget(name) {
+  return [...document.querySelectorAll(`[data-tour="${name}"]`)].find((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden";
+  });
+}
+
 export default function WelcomeModal({ user, onClose, onSignUp }) {
-  useBodyScrollLock();
-  const [step, setStep] = useState(0);
-  const last = step === STEPS.length - 1;
-  const s = STEPS[step];
+  const steps = STEPS;
+  const [i, setI] = useState(0);
+  const [rect, setRect] = useState(null);
+  const step = steps[i];
+
+  const measure = useCallback(() => {
+    const el = step?.target && findTarget(step.target);
+    if (!el) return setRect(null);
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 });
+  }, [step]);
+
+  // Bring the button into view, then keep the highlight on it
+  useLayoutEffect(() => {
+    const el = step?.target && findTarget(step.target);
+    if (!el) return setRect(null);
+    const inFixedBar = !!el.closest("nav, header") && getComputedStyle(el.closest("nav, header")).position === "fixed";
+    if (!inFixedBar) el.scrollIntoView({ block: "center", behavior: "smooth" });
+    measure();
+    const t = setTimeout(measure, 450);
+    return () => clearTimeout(t);
+  }, [step, measure]);
+
+  useEffect(() => {
+    window.addEventListener("scroll", measure, true);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure]);
+
+  // Moves to the next (or previous) step whose button is on screen: e.g. no
+  // challenge today, or the feed still loading, just skips that step
+  const go = useCallback(
+    (dir) => {
+      let n = i + dir;
+      while (n > 0 && n < steps.length - 1 && steps[n].target && !findTarget(steps[n].target)) n += dir;
+      if (n >= 0 && n < steps.length) setI(n);
+    },
+    [i, steps]
+  );
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight" && i < steps.length - 1) go(1);
+      if (e.key === "ArrowLeft" && i > 0) go(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [i, steps.length, onClose, go]);
+
+  if (!step) return null;
+
+  // The card sits below the button if it's in the top half, otherwise above
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const cardW = Math.min(320, vw - GUTTER * 2);
+  const card = { left: (vw - cardW) / 2, top: null, bottom: null };
+  let arrowUp = true;
+  let arrowX = cardW / 2;
+  if (rect) {
+    const center = rect.left + rect.width / 2;
+    card.left = Math.min(Math.max(GUTTER, center - cardW / 2), vw - cardW - GUTTER);
+    arrowX = Math.min(Math.max(24, center - card.left), cardW - 24);
+    if (rect.top + rect.height / 2 < vh / 2) {
+      card.top = Math.min(rect.top + rect.height + 44, vh - 200);
+    } else {
+      card.bottom = Math.min(vh - rect.top + 44, vh - 200);
+      arrowUp = false;
+    }
+  }
+
+  const next = () => (step.last ? onClose() : go(1));
 
   return (
-    <motion.div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/95 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#151c28] p-6 text-center"
-      >
-        <button
-          onClick={onClose}
-          aria-label="Skip"
-          className="absolute right-3 top-3 rounded-full p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white"
+    <div className="fixed inset-0 z-[80]" role="dialog" aria-label="How Pixsup works">
+      {/* Dim everything; the highlight cuts a bright hole around the button */}
+      {rect ? (
+        <motion.div
+          className="pointer-events-none fixed rounded-2xl ring-2 ring-cyan-300"
+          initial={false}
+          animate={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
+          transition={{ type: "spring", stiffness: 260, damping: 30 }}
+          style={{ boxShadow: "0 0 0 9999px rgba(3,6,12,0.82), 0 0 24px 4px rgba(34,211,238,0.6)" }}
+        />
+      ) : (
+        <div className="fixed inset-0 bg-[rgba(3,6,12,0.88)]" />
+      )}
+      {/* Taps outside the card don't reach the app underneath */}
+      <div className="fixed inset-0" onClick={(e) => e.stopPropagation()} />
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: arrowUp ? 10 : -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed"
+          style={
+            rect
+              ? { left: card.left, width: cardW, ...(card.top !== null ? { top: card.top } : { bottom: card.bottom }) }
+              : { left: card.left, width: cardW, top: "35%" }
+          }
         >
-          <X className="h-4 w-4" />
-        </button>
+          {rect && (
+            <motion.span
+              className="absolute text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]"
+              style={{ left: arrowX - 16, ...(arrowUp ? { top: -40 } : { bottom: -40 }) }}
+              animate={{ y: arrowUp ? [0, -8, 0] : [0, 8, 0] }}
+              transition={{ repeat: Infinity, duration: 0.9 }}
+            >
+              {arrowUp ? <ArrowUp className="h-8 w-8" strokeWidth={3} /> : <ArrowDown className="h-8 w-8" strokeWidth={3} />}
+            </motion.span>
+          )}
 
-        <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-cyan-400">
-          How Pixsup works
-        </p>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.18 }}
-            className="space-y-3"
-          >
-            <div className="text-5xl">{s.icon}</div>
-            <h2 className="text-xl font-black text-white">{s.title}</h2>
-            <p className="text-sm leading-relaxed text-gray-300">{s.body}</p>
-            <div className="flex min-h-10 items-center justify-center pt-1">{s.visual}</div>
-          </motion.div>
-        </AnimatePresence>
-
-        <div className="my-5 flex justify-center gap-1.5">
-          {STEPS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setStep(i)}
-              aria-label={`Step ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all ${
-                i === step ? "w-6 bg-cyan-400" : "w-1.5 bg-white/20"
-              }`}
-            />
-          ))}
-        </div>
-
-        {last ? (
-          <div className="space-y-2">
-            {!user && (
-              <button
-                onClick={onSignUp}
-                className="spring-tap w-full rounded-xl bg-gradient-to-r from-cyan-500 to-orange-500 py-2.5 text-sm font-extrabold text-black active:scale-95"
-              >
-                Create a free account
-              </button>
-            )}
+          <div className="relative rounded-2xl border border-cyan-400/40 bg-[#151c28] p-4 shadow-2xl">
             <button
               onClick={onClose}
-              className={`spring-tap w-full rounded-xl py-2.5 text-sm font-extrabold active:scale-95 ${
-                user
-                  ? "bg-gradient-to-r from-cyan-500 to-orange-500 text-black"
-                  : "border border-white/10 bg-white/5 text-gray-200"
-              }`}
+              aria-label="Skip the tour"
+              className="absolute right-2 top-2 rounded-full p-1 text-gray-400 hover:bg-white/10 hover:text-white"
             >
-              {user ? "Let's go" : "Just look around"}
+              <X className="h-4 w-4" />
             </button>
+            {!rect && <div className="mb-2 text-4xl">{step.icon}</div>}
+            <p className="mb-1 pr-6 text-base font-black text-white">
+              {rect && <span className="mr-1.5">{step.icon}</span>}
+              {step.title}
+            </p>
+            <p className="text-sm leading-relaxed text-gray-300">{step.body}</p>
+
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="flex gap-1">
+                {steps.map((_, n) => (
+                  <span
+                    key={n}
+                    className={`h-1.5 rounded-full transition-all ${n === i ? "w-4 bg-cyan-400" : "w-1.5 bg-white/20"}`}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                {i > 0 && !step.last && (
+                  <button onClick={() => go(-1)} className="px-2 text-xs font-bold text-gray-400 hover:text-white">
+                    Back
+                  </button>
+                )}
+                {step.last && !user && (
+                  <button
+                    onClick={onSignUp}
+                    className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold text-gray-200 hover:bg-white/10"
+                  >
+                    Create account
+                  </button>
+                )}
+                <button
+                  onClick={next}
+                  className="spring-tap rounded-full bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-1.5 text-xs font-black text-black active:scale-95"
+                >
+                  {i === 0 ? "Show me around" : step.last ? "Let's go" : "Next"}
+                </button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="flex-1 rounded-xl py-2.5 text-sm font-bold text-gray-400 transition hover:text-white"
-            >
-              Skip
-            </button>
-            <button
-              onClick={() => setStep(step + 1)}
-              className="spring-tap flex-1 rounded-xl bg-cyan-400 py-2.5 text-sm font-extrabold text-black active:scale-95"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

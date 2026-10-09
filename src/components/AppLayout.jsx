@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { base44, supabase } from "@/api/base44Client";
 import TopBar from "@/components/TopBar";
@@ -30,9 +30,11 @@ export default function AppLayout() {
   // First visit: explain the app. Not on top of a shared post someone came to
   // see (they get it next time they land on the feed).
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   useEffect(() => {
-    if (pathname.startsWith("/p/") || pathname === "/terms" || pathname === "/privacy") return;
+    // the tour points at buttons on the feed, so it starts there
+    if (pathname !== "/") return;
     try {
       if (!localStorage.getItem(WELCOME_SEEN_KEY)) setWelcomeOpen(true);
     } catch {
@@ -268,7 +270,10 @@ export default function AppLayout() {
           user,
           refreshUser,
           openAuth: () => setAuthOpen(true),
-          openWelcome: () => setWelcomeOpen(true),
+          openWelcome: () => {
+            navigate("/");
+            setWelcomeOpen(true);
+          },
           openUpload,
           notifications,
           refreshNotifications,

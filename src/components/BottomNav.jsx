@@ -13,9 +13,10 @@ export default function BottomNav({ onUpload, onHome, unread, user }) {
     if (path !== to) navigate(to);
   };
 
-  const Item = ({ icon: Icon, label, active, dot, onClick }) => (
+  const Item = ({ icon: Icon, label, active, dot, onClick, tour }) => (
     <button
       onClick={onClick}
+      data-tour={tour}
       className={`flex flex-col items-center gap-0.5 transition-all active:scale-95 ${
         active
           ? "text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]"
@@ -44,6 +45,8 @@ export default function BottomNav({ onUpload, onHome, unread, user }) {
         />
         <button
           onClick={onUpload}
+          data-tour="upload"
+          aria-label="Post a photo"
           className="-translate-y-3 -mb-1 rounded-full border-2 border-[#0b0f17] bg-gradient-to-tr from-cyan-400 to-orange-500 p-3 text-black shadow-[0_0_20px_rgba(34,211,238,0.55)] transition-transform active:scale-95"
         >
           <Plus className="h-6 w-6" strokeWidth={3} />
@@ -59,6 +62,7 @@ export default function BottomNav({ onUpload, onHome, unread, user }) {
           // the member's own picture, once they've set one
           icon={user?.avatar_url ? () => <Avatar url={user.avatar_url} name={user.username} size={20} /> : User}
           label="Profile"
+          tour="profile"
           active={path === "/profile"}
           onClick={() => go("/profile")}
         />

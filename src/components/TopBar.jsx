@@ -109,6 +109,7 @@ export default function TopBar({
               </Link>
               <Link
                 to="/profile"
+                data-tour="profile"
                 className={navLinkClass(location.pathname === "/profile")}
               >
                 {user?.avatar_url ? (
@@ -120,6 +121,7 @@ export default function TopBar({
               </Link>
               <button
                 onClick={onUpload}
+                data-tour="upload"
                 className="spring-tap ml-1 flex items-center gap-1 rounded-full bg-gradient-to-r from-cyan-500 to-orange-500 px-3 py-1.5 text-xs font-black text-black shadow-[0_0_14px_rgba(34,211,238,0.5)] transition-transform hover:scale-105 active:scale-95"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={3} /> Post

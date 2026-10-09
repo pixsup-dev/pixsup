@@ -62,6 +62,7 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
 
   return (
     <div
+      data-tour={index === 0 ? "tile" : undefined}
       className={`flip-card rolling-tile relative aspect-square ${
         isBreaking(post, now)
           ? "breaking-tile rounded-xl"

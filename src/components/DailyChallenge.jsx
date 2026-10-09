@@ -62,6 +62,7 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
         </div>
         <button
           onClick={onJoin}
+          data-tour="challenge"
           className="spring-tap flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-4 py-2 text-sm font-black text-white shadow-lg active:scale-95"
         >
           <Camera className="h-4 w-4" /> Join the challenge

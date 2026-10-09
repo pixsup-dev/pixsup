@@ -32,7 +32,7 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
   );
 
   return (
-    <section className="mb-6">
+    <section className="mb-6" data-tour="belt">
       <div className="mb-3 flex items-end justify-between gap-2 px-1">
         <div>
           <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-orange-400">
