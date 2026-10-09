@@ -5,6 +5,7 @@ import { X, UploadCloud, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { compressImage } from "@/lib/compressImage";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
+import Avatar from "@/components/Avatar";
 
 export default function PostCreator({ challenge, onClose, onCreated }) {
   useBodyScrollLock();
@@ -185,16 +186,11 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
         </div>
         {user && (
           <div className="-mt-2 flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-orange-500 text-xs font-black text-black">
-              {(user.full_name || user.email || "You")
-                .split(" ")
-                .map((w) => w[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase()}
-            </span>
+            <Avatar url={user.avatar_url} name={user.username || user.full_name} size={36} />
             <span className="flex flex-col">
-              <span className="text-xs font-bold text-white">{user.full_name || "You"}</span>
+              <span className="text-xs font-bold text-white">
+                {user.username ? `@${user.username}` : user.full_name || "You"}
+              </span>
               <span className="text-[10px] text-gray-400">Posting as you</span>
             </span>
           </div>

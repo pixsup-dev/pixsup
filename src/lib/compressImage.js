@@ -27,3 +27,19 @@ export async function compressImage(file) {
     return file;
   }
 }
+
+// A profile picture: the photo's centre, cropped square and shrunk to 320px
+export async function squareAvatar(file, size = 320) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  canvas
+    .getContext("2d")
+    .drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
+  bitmap.close?.();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+  if (!blob) throw new Error("Couldn't read that photo");
+  return new File([blob], "avatar.jpg", { type: "image/jpeg" });
+}

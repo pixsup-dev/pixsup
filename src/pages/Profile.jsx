@@ -9,6 +9,7 @@ import { displayNameFor } from "@/lib/engagement";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import { formatRemaining } from "@/lib/time";
 import PostDetail from "@/components/PostDetail";
+import AvatarPicker from "@/components/AvatarPicker";
 
 const HOUR = 60 * 60 * 1000;
 const lifeOf = (p) =>
@@ -159,7 +160,6 @@ export default function Profile() {
   };
   const savedPosts = (posts || []).filter((p) => saved.includes(p.id));
   const name = displayNameFor(user);
-  const initial = (name[0] || "?").toUpperCase();
   const longestLabel =
     stats.longest >= HOUR
       ? `${Math.floor(stats.longest / HOUR)}h ${Math.floor((stats.longest % HOUR) / 60000)}m`
@@ -179,9 +179,7 @@ export default function Profile() {
         <div className="h-20 bg-gradient-to-r from-cyan-500/40 via-violet-500/30 to-orange-500/40" />
         <div className="px-4 pb-4">
           <div className="-mt-9 flex items-end justify-between gap-3">
-            <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full border-4 border-[#151c28] bg-gradient-to-tr from-cyan-400 to-orange-500 text-2xl font-black text-black">
-              {initial}
-            </div>
+            <AvatarPicker user={user} name={name} onChanged={refreshUser} />
             <div className="flex gap-2 pb-1">
               <Link
                 to="/settings"

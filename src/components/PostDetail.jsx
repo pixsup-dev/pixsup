@@ -11,7 +11,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import { formatRemaining } from "@/lib/time";
-import useUsernames from "@/hooks/useUsernames";
+import { useMembers } from "@/hooks/useUsernames";
+import Avatar from "@/components/Avatar";
 import BoostPanel from "@/components/BoostPanel";
 import EmojiBurst from "@/components/EmojiBurst";
 import { isBreaking } from "@/lib/breaking";
@@ -29,7 +30,8 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   useBodyScrollLock();
   const { user, isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
-  const names = useUsernames([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
+  const members = useMembers([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
+  const names = Object.fromEntries(Object.entries(members).map(([id, m]) => [id, m.username]));
   const [text, setText] = useState("");
   const [voted, setVoted] = useState(false);
   const [current, setCurrent] = useState(post);
@@ -235,12 +237,19 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           <p className="text-sm font-medium text-gray-200">
             {current.title || "Untitled"}
           </p>
-          <p className="-mt-2 text-xs text-gray-400">
-            {current.isNews
-              ? `via ${current.guest_author_id || "the news"}`
-              : names[current.created_by_id]
-                ? `by @${names[current.created_by_id]}`
-                : null}
+          <p className="-mt-2 flex flex-wrap items-center gap-x-1 text-xs text-gray-400">
+            {current.isNews ? (
+              `via ${current.guest_author_id || "the news"}`
+            ) : names[current.created_by_id] ? (
+              <>
+                <Avatar
+                  url={members[current.created_by_id]?.avatar_url}
+                  name={names[current.created_by_id]}
+                  size={18}
+                />
+                by @{names[current.created_by_id]}
+              </>
+            ) : null}
             {!current.isNews && current.city && ` · 📍 ${current.city}`}
             {current.saved_by_name && (
               <span className="ml-2 font-bold text-yellow-300">
@@ -362,6 +371,12 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
                         c.id === hotTakeId ? "border border-orange-400/40 bg-orange-400/10" : "bg-white/5"
                       }`}
                     >
+                      <Avatar
+                        url={members[c.created_by_id]?.avatar_url}
+                        name={names[c.created_by_id] || "member"}
+                        size={22}
+                        className="mt-0.5"
+                      />
                       <p className="min-w-0 flex-1">
                         {c.id === hotTakeId && (
                           <span className="mr-1.5 rounded bg-orange-500 px-1 py-0.5 text-[9px] font-black text-black">

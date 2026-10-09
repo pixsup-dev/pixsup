@@ -203,6 +203,7 @@ const auth = {
       rescues: profile?.rescues ?? 0,
       city: profile?.city ?? null,
       morning_pulse: profile?.morning_pulse ?? false,
+      avatar_url: profile?.avatar_url ?? null,
       created_date: user.created_at,
     };
   },

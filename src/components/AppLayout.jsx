@@ -264,7 +264,7 @@ export default function AppLayout() {
           refreshNotifications,
         }}
       />
-      <BottomNav onUpload={() => openUpload()} onHome={resetFilters} unread={unread} />
+      <BottomNav onUpload={() => openUpload()} onHome={resetFilters} unread={unread} user={user} />
       <AnimatePresence>
         {creatorOpen && (
           <PostCreator

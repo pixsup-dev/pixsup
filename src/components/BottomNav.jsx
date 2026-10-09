@@ -1,8 +1,9 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Home, Compass, Plus, Zap, User } from "lucide-react";
+import Avatar from "@/components/Avatar";
 
-export default function BottomNav({ onUpload, onHome, unread }) {
+export default function BottomNav({ onUpload, onHome, unread, user }) {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
@@ -55,7 +56,8 @@ export default function BottomNav({ onUpload, onHome, unread }) {
           onClick={() => go("/hits")}
         />
         <Item
-          icon={User}
+          // the member's own picture, once they've set one
+          icon={user?.avatar_url ? () => <Avatar url={user.avatar_url} name={user.username} size={20} /> : User}
           label="Profile"
           active={path === "/profile"}
           onClick={() => go("/profile")}

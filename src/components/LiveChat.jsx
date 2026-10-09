@@ -3,6 +3,8 @@ import { Flag, Send, UserX } from "lucide-react";
 import { base44, supabase } from "@/api/base44Client";
 import { useBlocklist } from "@/hooks/useBlocklist";
 import { useToast } from "@/components/ui/use-toast";
+import { useMembers } from "@/hooks/useUsernames";
+import Avatar from "@/components/Avatar";
 
 const LIFETIME_MS = 10 * 60 * 1000;
 
@@ -56,6 +58,8 @@ export default function LiveChat({ post, user, onSignIn, onPresence }) {
   const visible = messages.filter(
     (m) => now - new Date(m.created_date).getTime() < LIFETIME_MS && !blocked.includes(m.user_id)
   );
+
+  const members = useMembers(visible.map((m) => m.user_id));
 
   // Keep the newest message in view
   useEffect(() => {
@@ -114,6 +118,12 @@ export default function LiveChat({ post, user, onSignIn, onPresence }) {
               className="group relative rounded-lg bg-white/5 px-3 py-1.5 text-sm text-gray-200 transition-opacity"
               style={{ opacity: age > LIFETIME_MS - 60 * 1000 ? 0.45 : 1 }}
             >
+              <Avatar
+                url={members[m.user_id]?.avatar_url}
+                name={m.username}
+                size={18}
+                className="mr-1.5 inline-flex align-middle"
+              />
               <span className={`mr-1.5 text-xs font-bold ${mine ? "text-orange-300" : "text-violet-300"}`}>
                 @{m.username}
               </span>

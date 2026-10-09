@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import CategoryChips from "@/components/CategoryChips";
 import NotificationBell from "@/components/NotificationBell";
 import { Zap, User, Compass, Plus, Home as HomeIcon, LogIn, RefreshCw } from "lucide-react";
+import Avatar from "@/components/Avatar";
 
 export default function TopBar({
   hashtags,
@@ -110,7 +111,12 @@ export default function TopBar({
                 to="/profile"
                 className={navLinkClass(location.pathname === "/profile")}
               >
-                <User className="h-3.5 w-3.5" /> Profile
+                {user?.avatar_url ? (
+                  <Avatar url={user.avatar_url} name={user.username} size={16} />
+                ) : (
+                  <User className="h-3.5 w-3.5" />
+                )}{" "}
+                Profile
               </Link>
               <button
                 onClick={onUpload}
