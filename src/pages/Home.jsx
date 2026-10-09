@@ -5,6 +5,7 @@ import { Loader2, ArrowDown } from "lucide-react";
 import TrendingBelt from "@/components/TrendingBelt";
 import WorldPulse from "@/components/WorldPulse";
 import RescueRow from "@/components/RescueRow";
+import DailyChallenge, { useTodaysChallenge } from "@/components/DailyChallenge";
 import RisingBelt from "@/components/RisingBelt";
 import PostGrid from "@/components/PostGrid";
 import PostDetail from "@/components/PostDetail";
@@ -29,8 +30,20 @@ const NEWS_TOPICS = [
 ];
 
 export default function Home() {
-  const { posts, loading, loadPosts, category, query, handleVote, handleReact, openAuth, user } =
-    useOutletContext();
+  const {
+    posts,
+    loading,
+    loadPosts,
+    category,
+    setCategory,
+    query,
+    handleVote,
+    handleReact,
+    openAuth,
+    openUpload,
+    user,
+  } = useOutletContext();
+  const challenge = useTodaysChallenge();
   const [activePost, setActivePost] = useState(null);
   const [pulseTopic, setPulseTopic] = useState("World");
 
@@ -168,6 +181,15 @@ export default function Home() {
       )}
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
+        {(isAllTag(category) || category.toLowerCase() === challenge?.tag?.toLowerCase()) && (
+          <DailyChallenge
+            challenge={challenge}
+            posts={posts}
+            onJoin={() => openUpload(challenge)}
+            onBrowse={() => setCategory(challenge.tag)}
+            onOpen={setActivePost}
+          />
+        )}
         <WorldPulse
           posts={pulse}
           title={pulseTitle}

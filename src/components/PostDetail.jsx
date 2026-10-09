@@ -14,6 +14,8 @@ import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
 import BoostPanel from "@/components/BoostPanel";
 import EmojiBurst from "@/components/EmojiBurst";
+import ExplainIt from "@/components/ExplainIt";
+import useMoodTrends, { moodLabel } from "@/hooks/useMoodTrends";
 import LastBreath, { inLastBreath } from "@/components/LastBreath";
 import PollCard from "@/components/PollCard";
 import LiveChat from "@/components/LiveChat";
@@ -39,6 +41,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   const merge = (updates) => setCurrent((c) => ({ ...c, ...updates }));
 
   const palette = reactionPalette(current);
+  const rising = moodLabel(useMoodTrends([post.id])[post.id]);
   const mood = current.isNews ? moodSummary(current.reactions) : null;
 
   // Live counts: other people's hits, reactions and comments arrive via the feed
@@ -238,6 +241,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           {current.isNews && current.summary && (
             <p className="text-sm leading-relaxed text-gray-300">{current.summary}</p>
           )}
+          <ExplainIt key={current.id} post={current} />
           {current.isNews && current.source_url && (
             <a
               href={current.source_url}
@@ -272,8 +276,13 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
 
           {mood && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+              <p className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-gray-400">
                 How people feel
+                {rising && (
+                  <span className="animate-pulse rounded-full bg-red-500/15 px-2 py-0.5 normal-case tracking-normal text-red-200">
+                    {rising}
+                  </span>
+                )}
               </p>
               <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-white/5">
                 {mood.map((m, i) => (

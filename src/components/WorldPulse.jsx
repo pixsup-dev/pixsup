@@ -5,6 +5,7 @@ import { formatRemaining } from "@/lib/time";
 import { moodSummary } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
 import EmojiBurst from "@/components/EmojiBurst";
+import useMoodTrends, { moodLabel } from "@/hooks/useMoodTrends";
 
 const JUST_IN_MS = 60 * 60 * 1000;
 // From this many stories, wider screens show two rows (top half on the first)
@@ -28,6 +29,7 @@ export default function WorldPulse({
   const [now, setNow] = useState(() => Date.now());
   const [votedIds, setVotedIds] = useState(() => new Set());
   const scroller = useRef(null);
+  const trends = useMoodTrends(posts.map((p) => p.id));
   const [canScroll, setCanScroll] = useState(false);
 
   useEffect(() => {
@@ -119,10 +121,14 @@ export default function WorldPulse({
           <span className="truncate text-[11px] text-gray-400">
             {post.guest_author_id}
             {post.poll && <span className="ml-1.5 font-bold text-violet-300">· 📊 Poll</span>}
-            {mood && (
-              <span className="ml-1.5 text-gray-300">
-                · {mood.pct}% {mood.emoji}
-              </span>
+            {trends[post.id] ? (
+              <span className="ml-1.5 font-bold text-red-300">· {moodLabel(trends[post.id])}</span>
+            ) : (
+              mood && (
+                <span className="ml-1.5 text-gray-300">
+                  · {mood.pct}% {mood.emoji}
+                </span>
+              )
             )}
           </span>
           <span

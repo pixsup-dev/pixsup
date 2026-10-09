@@ -4,6 +4,7 @@ import { Flag, Loader2, ShieldAlert, EyeOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
 import { useToast } from "@/components/ui/use-toast";
+import ChallengeScheduler from "@/components/ChallengeScheduler";
 
 // Moderation queue for admins (profiles.role = 'admin'): review reported
 // posts, keep or remove them, ban authors, and lift bans. Everything here is
@@ -231,6 +232,8 @@ export default function Admin() {
           ))}
         </ul>
       )}
+
+      <ChallengeScheduler />
 
       <h2 className="mb-2 mt-8 text-xs font-bold uppercase tracking-widest text-red-400">Banned accounts</h2>
       {banned.length === 0 ? (

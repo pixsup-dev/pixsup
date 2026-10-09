@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { compressImage } from "@/lib/compressImage";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
-export default function PostCreator({ onClose, onCreated }) {
+export default function PostCreator({ challenge, onClose, onCreated }) {
   useBodyScrollLock();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -117,7 +117,8 @@ export default function PostCreator({ onClose, onCreated }) {
         is_trending: false,
         expires_at: expiresAt,
         category,
-        hashtags,
+        // a challenge entry always carries the challenge's tag
+        hashtags: challenge?.tag ? [...new Set([challenge.tag, ...hashtags])].slice(0, 6) : hashtags,
         emojis,
         ...(poll ? { poll } : {}),
       });
@@ -172,6 +173,16 @@ export default function PostCreator({ onClose, onCreated }) {
               <span className="text-xs font-bold text-white">{user.full_name || "You"}</span>
               <span className="text-[10px] text-gray-400">Posting as you</span>
             </span>
+          </div>
+        )}
+        {challenge?.tag && (
+          <div className="-mt-1 rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-300">
+              📸 Joining today's challenge
+            </p>
+            <p className="text-xs font-bold text-white">
+              {challenge.prompt} <span className="text-cyan-300">{challenge.tag}</span>
+            </p>
           </div>
         )}
         <div

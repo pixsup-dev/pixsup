@@ -35,6 +35,7 @@ const TABLES = {
   PollVote: "poll_votes",
   ChatMessage: "chat_messages",
   ChatReport: "chat_reports",
+  DailyChallenge: "daily_challenges",
 };
 
 // Normalize Supabase/PostgREST errors into thrown Errors with a status, like the Base44 SDK

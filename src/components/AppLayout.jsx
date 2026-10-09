@@ -214,7 +214,9 @@ export default function AppLayout() {
   }, []);
 
   // Posting needs an account — guests are asked to sign in first
-  const openUpload = () => (user ? setCreatorOpen(true) : setAuthOpen(true));
+  // creatorOpen: false, true, or a daily challenge the new post joins
+  const openUpload = (challenge) =>
+    user ? setCreatorOpen(challenge?.tag ? challenge : true) : setAuthOpen(true);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#0b0f17] pb-20 font-body text-gray-100 lg:pb-6">
@@ -225,7 +227,7 @@ export default function AppLayout() {
         onRotate={refreshFeed}
         query={query}
         onQuery={setQuery}
-        onUpload={openUpload}
+        onUpload={() => openUpload()}
         onHomeReset={resetFilters}
         user={user}
         unread={unread}
@@ -257,14 +259,19 @@ export default function AppLayout() {
           refreshUser,
           openAuth: () => setAuthOpen(true),
           openWelcome: () => setWelcomeOpen(true),
+          openUpload,
           notifications,
           refreshNotifications,
         }}
       />
-      <BottomNav onUpload={openUpload} onHome={resetFilters} unread={unread} />
+      <BottomNav onUpload={() => openUpload()} onHome={resetFilters} unread={unread} />
       <AnimatePresence>
         {creatorOpen && (
-          <PostCreator onClose={() => setCreatorOpen(false)} onCreated={loadPosts} />
+          <PostCreator
+            challenge={creatorOpen === true ? null : creatorOpen}
+            onClose={() => setCreatorOpen(false)}
+            onCreated={loadPosts}
+          />
         )}
         {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
         {user && !user.username && <OnboardingModal user={user} onDone={refreshUser} />}
