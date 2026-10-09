@@ -129,7 +129,13 @@
 }
 
 /* 3D tile flip */
-.flip-card { perspective: 1000px; }
+.flip-card {
+  perspective: 1000px;
+  /* long-press reacts: no iPhone "Save image" menu or text selection */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 .flip-card-inner {
   position: relative;
   width: 100%;

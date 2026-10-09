@@ -7,6 +7,7 @@ import ExploreTile from "@/components/explore/ExploreTile";
 import PostDetail from "@/components/PostDetail";
 import { topHashtags } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
+import useInfiniteCount from "@/hooks/useInfiniteCount";
 
 const PAGE = 30;
 const time = (d) => new Date(d).getTime();
@@ -35,7 +36,8 @@ export default function Explore() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [sortId, setSortId] = useState("hot");
-  const [visible, setVisible] = useState(PAGE);
+  // more tiles load as you scroll; back to the first page on a new sort or search
+  const [visible, moreRef, showMore] = useInfiniteCount(PAGE, `${sortId}|${q}`);
   const [now, setNow] = useState(() => Date.now());
   const [activePost, setActivePost] = useState(null);
 
@@ -43,7 +45,6 @@ export default function Explore() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  useEffect(() => setVisible(PAGE), [sortId, q]);
 
   // Topic cards with their most-engaged live post as the cover (no photo used twice)
   const topics = useMemo(() => {
@@ -172,7 +173,8 @@ export default function Explore() {
             </div>
             {results.length > visible && (
               <button
-                onClick={() => setVisible((v) => v + PAGE)}
+                ref={moreRef}
+                onClick={showMore}
                 className="spring-tap mx-auto mt-4 block rounded-full border border-cyan-400/40 bg-cyan-400/10 px-6 py-2 text-xs font-bold text-cyan-300 transition hover:bg-cyan-400/20 active:scale-95"
               >
                 Load more

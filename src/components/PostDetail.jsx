@@ -159,6 +159,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
       >
         <button
           onClick={onClose}
+          aria-label="Close"
           className="absolute right-3 top-3 z-30 rounded-full bg-black/60 p-2 text-white transition hover:bg-black"
         >
           <X className="h-4 w-4" />

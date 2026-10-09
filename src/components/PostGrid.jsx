@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Image } from "@/components/ui/image";
 import { Bookmark, Zap, Hourglass } from "lucide-react";
 import useSavedPosts from "@/hooks/useSavedPosts";
+import useInfiniteCount from "@/hooks/useInfiniteCount";
 import PostActionMenu from "@/components/PostActionMenu";
 import ShareButton from "@/components/ShareButton";
 import { formatRemaining } from "@/lib/time";
@@ -72,6 +73,8 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
       onPointerDown={startPress}
       onPointerUp={cancelPress}
       onPointerLeave={cancelPress}
+      // iPhone cancels the touch when a scroll starts: no reaction menu mid-scroll
+      onPointerCancel={cancelPress}
       onPointerMove={movePress}
     >
       <div className="flip-card-inner">
@@ -230,7 +233,8 @@ export default function PostGrid({ posts, loading, survivorId, onOpen, onReact }
   const { isSaved, toggleSave } = useSavedPosts();
   const [now, setNow] = useState(() => Date.now());
   const [flippedIds, setFlippedIds] = useState(() => new Set());
-  const [visible, setVisible] = useState(12);
+  // more tiles load as you scroll (the button is a fallback)
+  const [visible, moreRef, showMore] = useInfiniteCount(12);
   const postsRef = useRef(posts);
 
   useEffect(() => {
@@ -305,11 +309,17 @@ export default function PostGrid({ posts, loading, survivorId, onOpen, onReact }
           </div>
           {posts.length > visible && (
             <button
-              onClick={() => setVisible((v) => v + 12)}
+              ref={moreRef}
+              onClick={showMore}
               className="spring-tap mx-auto mt-4 block rounded-full border border-cyan-400/40 bg-cyan-400/10 px-6 py-2 text-xs font-bold text-cyan-300 transition hover:bg-cyan-400/20 active:scale-95"
             >
               Load More
             </button>
+          )}
+          {posts.length > 12 && posts.length <= visible && (
+            <p className="mt-5 text-center text-xs text-gray-400">
+              ✨ You're all caught up. New posts drop all the time, so check back soon.
+            </p>
           )}
         </>
       )}
