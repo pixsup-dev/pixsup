@@ -16,6 +16,7 @@ export default function Privacy() {
         <li><strong>Profile:</strong> your username and when you accepted these policies.</li>
         <li><strong>Your content and activity:</strong> photos and videos you upload, titles, comments, hits, reactions, reports you make, people you block and posts you save.</li>
         <li><strong>Technical data:</strong> standard server logs (such as IP address and browser type) kept by our hosting providers for security and reliability.</li>
+        <li><strong>Visit statistics:</strong> anonymous counts of page views, which pages are popular, the country and type of device. These use no cookies and can't identify you.</li>
       </ul>
       <p>
         Photos are resized before upload, which removes embedded metadata such as GPS location.
@@ -40,7 +41,7 @@ export default function Privacy() {
       <p>We share data only with providers that help us run Pixsup:</p>
       <ul>
         <li>Supabase: database, authentication and file storage</li>
-        <li>Vercel: website hosting</li>
+        <li>Vercel: website hosting and anonymous visit statistics</li>
         <li>Resend: account emails</li>
         <li>Google: optional sign-in</li>
         <li>An AI image-moderation provider, when enabled, to check uploaded images</li>
