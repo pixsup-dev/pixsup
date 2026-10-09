@@ -168,16 +168,17 @@ export default function LiveChat({ post, user, onSignIn, onPresence }) {
           <input
             value={text}
             maxLength={200}
+            enterKeyHint="send"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
             placeholder="Chat live (vanishes in 10 min)..."
-            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-violet-400 focus:outline-none"
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-violet-400 focus:outline-none"
           />
           <button
             onClick={send}
             disabled={sending || !text.trim()}
             aria-label="Send"
-            className="spring-tap rounded-xl bg-violet-500 px-3 text-white transition hover:bg-violet-400 active:scale-95 disabled:opacity-50"
+            className="spring-tap shrink-0 rounded-xl bg-violet-500 px-3 text-white transition hover:bg-violet-400 active:scale-95 disabled:opacity-50"
           >
             <Send className="h-3.5 w-3.5" />
           </button>

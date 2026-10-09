@@ -183,3 +183,12 @@
   background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.18), transparent);
   animation: shimmerSlide 1.6s infinite;
 }
+/* iPhone Safari zooms the page into any text box under 16px, pushing buttons
+   like Send off screen: phones get 16px text in every input */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

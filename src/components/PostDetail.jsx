@@ -420,15 +420,16 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
                 <div className="flex gap-2">
                   <input
                     value={text}
+                    enterKeyHint="send"
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addComment()}
                     placeholder="Add a comment..."
-                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
                   />
                   <button
                     onClick={addComment}
                     disabled={sendingComment}
-                    className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
+                    className="spring-tap shrink-0 rounded-xl bg-cyan-400 px-4 text-xs font-extrabold text-black transition hover:bg-cyan-300 active:scale-95 disabled:opacity-50"
                   >
                     {sendingComment ? "…" : "Send"}
                   </button>

@@ -57,7 +57,7 @@ export default function PreferencesSection({ user, onSaved }) {
               onChange={(e) => setCity(e.target.value)}
               maxLength={60}
               placeholder="e.g. New York"
-              className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-cyan-400 focus:outline-none"
+              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-cyan-400 focus:outline-none"
             />
             <button
               onClick={() =>
