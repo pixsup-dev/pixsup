@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.morningPulse]
 verify_jwt = false
+
+[functions.errorAlert]
+verify_jwt = false

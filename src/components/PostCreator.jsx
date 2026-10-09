@@ -316,9 +316,9 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
           </p>
         )}
         <p className="text-center text-[10px] text-gray-400">
-          Every photo is AI-scanned, titled and tagged before publishing · Standard posts
-          expire in 1 hour · Each Hit adds +5 minutes · Each comment adds +10 minutes ·
-          Each emoji adds +3 minutes
+          Every photo is AI-scanned, titled and tagged before publishing · Posts live 1
+          hour · Other people keep them alive: each person's Hit adds +5 minutes, their
+          first emoji +3 and their first comment +10
         </p>
       </motion.div>
     </motion.div>
