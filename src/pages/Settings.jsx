@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useBlocklist, handleLabel } from "@/hooks/useBlocklist";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
-import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert, Sparkles } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert, Sparkles, LogOut } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@pixsup.com";
 
@@ -112,6 +113,12 @@ export default function Settings() {
         <div className="rounded-2xl border border-red-400/20 bg-red-400/5 p-4">
           {user ? (
             <>
+              <button
+                onClick={() => base44.auth.logout("/")}
+                className="spring-tap mb-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 py-2 text-xs font-extrabold text-gray-100 transition hover:bg-white/10 active:scale-95"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Log out
+              </button>
               <p className="mb-3 text-xs text-gray-400">
                 Deleting your account permanently removes your posts, votes,
                 comments, reports and profile data.
