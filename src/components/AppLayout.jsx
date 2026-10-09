@@ -92,9 +92,10 @@ export default function AppLayout() {
       if (type === "create") return reloadSoon();
       setPosts((prev) => {
         if (type === "delete" || !data || !isLive(data)) return prev.filter((p) => p.id !== id);
+        // a post that's alive but not listed (e.g. just revived) joins the feed
         return prev.some((p) => p.id === id)
           ? prev.map((p) => (p.id === id ? { ...p, ...data } : p))
-          : prev;
+          : [data, ...prev];
       });
     });
     return () => {

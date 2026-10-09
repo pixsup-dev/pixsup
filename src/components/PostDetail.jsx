@@ -204,6 +204,10 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
               <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-black uppercase tracking-wide text-white">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> Breaking news
               </span>
+            ) : current.revived_at ? (
+              <span className="rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-black uppercase tracking-wide text-black">
+                🧟 Revived by the crowd
+              </span>
             ) : (
               <span className="rounded-full border border-cyan-800 bg-cyan-950/60 px-2.5 py-0.5 text-xs font-bold uppercase text-cyan-400">
                 {cat || "Pixsup"}

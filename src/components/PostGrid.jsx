@@ -63,7 +63,13 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
   return (
     <div
       className={`flip-card rolling-tile relative aspect-square ${
-        isBreaking(post, now) ? "breaking-tile rounded-xl" : post.isNews ? "news-tile rounded-xl" : ""
+        isBreaking(post, now)
+          ? "breaking-tile rounded-xl"
+          : post.isNews
+            ? "news-tile rounded-xl"
+            : post.revived_at
+              ? "revived-tile rounded-xl"
+              : ""
       } ${heatClass(
         post.hits || 0
       )} ${flipped ? "flipped" : ""} ${survivor ? "survivor-tile" : ""} ${
@@ -120,6 +126,11 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                     {isSpotlit(post, now) ? "🔦 SPOTLIGHT" : "⚡ BOOSTED"}
                   </span>
                 )
+              )}
+              {post.revived_at && !isBreaking(post, now) && (
+                <span className="absolute bottom-6 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-black">
+                  🧟 REVIVED
+                </span>
               )}
               {isBreaking(post, now) && (
                 <span className="absolute bottom-6 left-1.5 flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">

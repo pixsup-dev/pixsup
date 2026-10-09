@@ -116,6 +116,12 @@
   box-shadow: 0 0 14px 2px rgba(239, 68, 68, 0.45);
 }
 
+/* Brought back from the Graveyard by the crowd: a green frame */
+.revived-tile {
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 14px 2px rgba(34, 197, 94, 0.45);
+}
+
 /* Last 60 seconds of a post's life: a red heartbeat glow */
 @keyframes lastBreath {
   0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.9), 0 0 10px 2px rgba(239, 68, 68, 0.35); }

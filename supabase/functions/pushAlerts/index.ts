@@ -5,6 +5,7 @@ import { admin } from "../_shared/supabase.ts";
 // Sends phone notifications (web push) every minute (pg_cron):
 //  - someone commented on, rescued or trended your post (from notifications)
 //  - your own post is about to die (2-5 minutes left, not trending)
+//  - 💀 your post just died: share it so people can revive it from the Graveyard
 //  - 🔔 a post you're watching is about to die
 //  - 🛟 Rescue Radar: a post in your topics or city is dying (3 a day at most)
 // Each row is claimed before sending, so overlapping runs never double-send.
@@ -13,7 +14,7 @@ import { admin } from "../_shared/supabase.ts";
 const PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY");
 const PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY");
 const SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:support@pixsup.com";
-const PUSHED_TYPES = ["comment", "rescue", "trending"];
+const PUSHED_TYPES = ["comment", "rescue", "trending", "revive"];
 const MAX_PER_USER_PER_RUN = 3;
 const RADAR_PER_DAY = 3;
 
@@ -29,6 +30,7 @@ function messageFor(n: { type: string; post_id: string; post_title: string | nul
   const title = short(n.post_title);
   const url = `/p/${n.post_id}`;
   if (n.type === "rescue") return { title: "🦸 Your post was saved!", body: `${who} rescued “${title}” at the last second.`, url, tag: `rescue-${n.post_id}` };
+  if (n.type === "revive") return { title: "🧟 Your post is back from the dead!", body: `The crowd revived “${title}”. It has 30 more minutes.`, url, tag: `revive-${n.post_id}` };
   if (n.type === "trending") return { title: "🔥 Your post is trending!", body: `“${title}” made the 24-hour Trending Belt.`, url, tag: `trending-${n.post_id}` };
   return { title: "💬 New comment", body: `${who} commented on “${title}”.`, url, tag: `comment-${n.post_id}` };
 }
@@ -79,6 +81,34 @@ Deno.serve(async () => {
         url: `/p/${p.id}`,
         tag: `dying-${p.id}`,
       });
+    }
+
+    // 2b) 💀 Members' posts that just died (Graveyard, once per post). Optional
+    // until the Graveyard columns exist.
+    try {
+      const { data: dead, error: deadError } = await admin
+        .from("posts")
+        .update({ death_alert_at: nowIso })
+        .eq("isNews", false)
+        .is("hidden_at", null)
+        .is("revived_at", null)
+        .is("death_alert_at", null)
+        .not("created_by_id", "is", null)
+        .gt("expires_at", new Date(now.getTime() - 3 * 60 * 1000).toISOString())
+        .lte("expires_at", nowIso)
+        .select("id, title, created_by_id, expires_at");
+      if (deadError) throw deadError;
+      for (const p of dead || []) {
+        const left = Math.max(1, 10 - Math.round((now.getTime() - Date.parse(p.expires_at)) / 60000));
+        queue(p.created_by_id, {
+          title: "💀 Your post just died",
+          body: `“${short(p.title)}” is in the Graveyard. Share it: if 3 people revive it in ${left} minutes, it's back!`,
+          url: `/p/${p.id}`,
+          tag: `dead-${p.id}`,
+        });
+      }
+    } catch (deadError) {
+      console.error("death alerts skipped:", deadError);
     }
 
     // Posts about to die that others could still save (1-5 minutes left)

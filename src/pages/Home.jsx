@@ -5,6 +5,7 @@ import { Loader2, ArrowDown } from "lucide-react";
 import TrendingBelt from "@/components/TrendingBelt";
 import WorldPulse from "@/components/WorldPulse";
 import RescueRow from "@/components/RescueRow";
+import Graveyard from "@/components/Graveyard";
 import DailyChallenge, { useTodaysChallenge } from "@/components/DailyChallenge";
 import RisingBelt from "@/components/RisingBelt";
 import PostGrid from "@/components/PostGrid";
@@ -206,6 +207,7 @@ export default function Home() {
           onOpen={setActivePost}
           onSignIn={openAuth}
         />
+        <Graveyard user={user} onSignIn={openAuth} onRevived={loadPosts} />
         <TrendingBelt
           posts={beltPosts}
           race={showingHot}
