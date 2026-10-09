@@ -6,6 +6,7 @@ import { Bell, Loader2, LogIn, Share2, TrendingUp, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
 import ShareButton from "@/components/ShareButton";
+import StoryCardButton from "@/components/StoryCardButton";
 import PostDetail from "@/components/PostDetail";
 import { formatRemaining } from "@/lib/time";
 
@@ -201,6 +202,11 @@ export default function Hits() {
                       >
                         <Share2 className="h-3 w-3" /> Get help
                       </ShareButton>
+                      <StoryCardButton
+                        post={p}
+                        label="📸 Story"
+                        className="shrink-0 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-extrabold text-white transition hover:bg-white/20 active:scale-95"
+                      />
                     </div>
                   ))}
                 </section>

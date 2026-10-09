@@ -15,6 +15,7 @@ import useUsernames from "@/hooks/useUsernames";
 import BoostPanel from "@/components/BoostPanel";
 import EmojiBurst from "@/components/EmojiBurst";
 import ExplainIt from "@/components/ExplainIt";
+import StoryCardButton from "@/components/StoryCardButton";
 import useMoodTrends, { moodLabel } from "@/hooks/useMoodTrends";
 import LastBreath, { inLastBreath } from "@/components/LastBreath";
 import PollCard from "@/components/PollCard";
@@ -299,13 +300,21 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
             </div>
           )}
 
-          <button
-            onClick={vote}
-            disabled={voted}
-            className="spring-tap w-full rounded-xl bg-gradient-to-r from-cyan-500 to-orange-500 py-2 text-sm font-extrabold text-black shadow-lg transition-all hover:from-cyan-400 hover:to-orange-400 active:scale-95 disabled:opacity-70"
-          >
-            ⚡ HIT POST ({current.hits || 0})
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={vote}
+              disabled={voted}
+              className="spring-tap flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-orange-500 py-2 text-sm font-extrabold text-black shadow-lg transition-all hover:from-cyan-400 hover:to-orange-400 active:scale-95 disabled:opacity-70"
+            >
+              ⚡ HIT POST ({current.hits || 0})
+            </button>
+            {remaining > 0 && (
+              <StoryCardButton
+                post={current}
+                className="spring-tap shrink-0 rounded-xl border border-fuchsia-400/40 bg-fuchsia-500/10 px-3 text-xs font-extrabold text-fuchsia-200 transition hover:bg-fuchsia-500/20 active:scale-95"
+              />
+            )}
+          </div>
 
           <div className="pt-1">
             <div className="mb-2 flex gap-1.5">
