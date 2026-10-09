@@ -3,6 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import { useBlocklist, handleLabel } from "@/hooks/useBlocklist";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import PreferencesSection from "@/components/PreferencesSection";
+import AlertsSection from "@/components/AlertsSection";
 import { base44 } from "@/api/base44Client";
 import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert, Sparkles, LogOut } from "lucide-react";
 
@@ -71,6 +72,7 @@ export default function Settings() {
       </section>
 
       {user && <PreferencesSection user={user} onSaved={refreshUser} />}
+      {user && <AlertsSection />}
 
       {/* Blocked Users */}
       <section className="mb-6">
