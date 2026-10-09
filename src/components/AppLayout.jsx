@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { base44, supabase } from "@/api/base44Client";
 import TopBar from "@/components/TopBar";
 import BottomNav from "@/components/BottomNav";
 import PostCreator from "@/components/PostCreator";
@@ -58,8 +58,16 @@ export default function AppLayout() {
   const loadPosts = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      // Posts hidden by 3+ reports are already filtered out by the server
-      const all = await base44.entities.Post.list("-created_date", 200);
+      // Only posts still alive: asking for "the newest N" let a flood of
+      // expired news push older 24-hour trending posts out of the feed.
+      // Posts hidden by 3+ reports are already filtered out by the server.
+      const { data: all, error } = await supabase
+        .from("posts")
+        .select("*")
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .order("created_date", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
       if (seq !== loadSeq.current) return; // a newer load superseded this one
       const now = Date.now();
       setPosts(all.filter((p) => isLive(p, now)));
