@@ -68,6 +68,25 @@ const SUMMARY_MAX = 280;
 // that has been up at least this long (engaged news keeps its full life)
 const RETIRE_AFTER_MS = 60 * 60 * 1000;
 const BREAKING_WINDOW_MS = 90 * 60 * 1000; // how fresh a top story must be to count as breaking
+// Two outlets covering the same event: headlines sharing most key words
+const STOP_WORDS = new Set(
+  "about after again against also amid been before being could from have into just more most over says said than that their them then there they this what when where which while will with would year years".split(" ")
+);
+const keyWords = (title: string) =>
+  new Set(
+    title
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !STOP_WORDS.has(w))
+  );
+const sameStory = (a: Set<string>, b: Set<string>) => {
+  let shared = 0;
+  for (const w of a) if (b.has(w)) shared++;
+  return shared >= 3 && shared / Math.min(a.size, b.size) >= 0.5;
+};
+
 const LINK_BATCH = 25; // links per "already posted?" query, keeps URLs short
 
 type Feed = { source: string; topic: string; url: string };
@@ -239,7 +258,7 @@ Deno.serve(async (req) => {
 
     const { data: live, error } = await admin
       .from("posts")
-      .select("id, isNews, top_story, created_date, hits, reactions, comment_count, is_trending, boosted_at")
+      .select("id, title, isNews, top_story, created_date, hits, reactions, comment_count, is_trending, boosted_at")
       .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
       .limit(1000);
     if (error) throw error;
@@ -301,7 +320,15 @@ Deno.serve(async (req) => {
       const { error: promoteError } = await admin.from("posts").update({ top_story: true }).in("id", promoteIds);
       if (promoteError) throw promoteError;
     }
-    const freshTop = [...topPicks.values()].filter((s) => !seenByLink.has(s.link));
+    // Headlines already live (or picked this run), to skip the same story from another outlet
+    const liveHeadlines = live.filter((p) => p.isNews && p.title).map((p) => keyWords(p.title!));
+    const isRepeat = (s: Story) => {
+      const k = keyWords(s.title);
+      if (liveHeadlines.some((h) => sameStory(k, h))) return true;
+      liveHeadlines.push(k);
+      return false;
+    };
+    const freshTop = [...topPicks.values()].filter((s) => !seenByLink.has(s.link) && !isRepeat(s));
     const topRoom = makeRoom(
       freshTop.length,
       Math.max(0, MAX_LIVE_TOP - liveTop.length - promoteIds.length),
@@ -320,9 +347,9 @@ Deno.serve(async (req) => {
           .slice(0, PER_FEED_PER_RUN)
       );
     }
-    const freshTopic = [...new Map(picked.map((s) => [s.link, s])).values()].sort(
-      (a, b) => b.published - a.published
-    );
+    const freshTopic = [...new Map(picked.map((s) => [s.link, s])).values()]
+      .sort((a, b) => b.published - a.published)
+      .filter((s) => !isRepeat(s));
     const topicRoom = makeRoom(freshTopic.length, Math.max(0, MAX_LIVE_NEWS - liveNews.length), liveNews);
     const newTopic = freshTopic.slice(0, topicRoom);
 

@@ -20,7 +20,7 @@ export default function ExploreTile({ post, now, big = false, onOpen }) {
     <div
       onClick={() => onOpen(post)}
       className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-[#151c28] ${
-        big ? "col-span-2 row-span-2" : "aspect-square"
+        big ? "col-span-2 row-span-2 aspect-square" : "aspect-square"
       } ${dying ? "border-red-500/60" : isBreaking(post, now) ? "breaking-tile" : post.isNews ? "news-tile" : "border-white/5"} ${
         inLastBreath(post, remaining) ? "last-breath" : ""
       }`}
@@ -29,7 +29,8 @@ export default function ExploreTile({ post, now, big = false, onOpen }) {
         src={media}
         alt={post.title}
         fittingType="fill"
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        // absolute, so a tall photo can't stretch the tile and leave gaps in the mosaic
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
       <EmojiBurst post={post} size={big ? "text-3xl" : "text-xl"} />
