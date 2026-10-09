@@ -86,7 +86,9 @@ export async function callGemini(parts: unknown[], schema: unknown, maxOutputTok
   return JSON.parse(textOut);
 }
 
-export async function geminiCheck(imageUrl: string) {
+// challengePrompt: when the upload is a Daily Challenge entry, the same call
+// also says whether the photo fits today's prompt (fits_challenge)
+export async function geminiCheck(imageUrl: string, challengePrompt?: string) {
   const image = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
   if (!image.ok) throw new Error(`Couldn't read the upload (${image.status})`);
   const mimeType = image.headers.get("content-type")?.split(";")[0] || "image/jpeg";
@@ -96,17 +98,32 @@ export async function geminiCheck(imageUrl: string) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   }
 
+  const schema = challengePrompt
+    ? {
+        ...GEMINI_SCHEMA,
+        required: [...GEMINI_SCHEMA.required, "fits_challenge"],
+        properties: { ...GEMINI_SCHEMA.properties, fits_challenge: { type: "BOOLEAN" } },
+      }
+    : GEMINI_SCHEMA;
+  const prompt = challengePrompt
+    ? GEMINI_PROMPT +
+      " This photo was entered in today's photo challenge: \"" + challengePrompt.slice(0, 200) + "\". " +
+      "Set fits_challenge=true if the photo reasonably matches it (be generous with creative or loose " +
+      "interpretations); false if it's clearly unrelated, a blank or meaningless image, or text/ads/spam."
+    : GEMINI_PROMPT;
+
   const out = await callGemini(
-    [{ text: GEMINI_PROMPT }, { inline_data: { mime_type: mimeType, data: btoa(binary) } }],
-    GEMINI_SCHEMA
+    [{ text: prompt }, { inline_data: { mime_type: mimeType, data: btoa(binary) } }],
+    schema
   );
   // Google's own safety filters refusing the image is a rejection too
-  if (out.blocked) return { flagged: true, categories: ["blocked by safety filter"], labels: {} };
+  if (out.blocked) return { flagged: true, categories: ["blocked by safety filter"], labels: {}, fitsChallenge: false };
   if (typeof out.safe !== "boolean") throw new Error("Gemini returned no verdict");
   return {
     flagged: !out.safe,
     categories: Array.isArray(out.violations) ? out.violations.map(String).slice(0, 5) : [],
     labels: out,
+    fitsChallenge: out.fits_challenge === true,
   };
 }
 

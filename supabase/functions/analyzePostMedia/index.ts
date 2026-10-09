@@ -117,17 +117,27 @@ Deno.serve(async (req) => {
     const ownPrefix = `${SUPABASE_URL}/storage/v1/object/public/media/${user.id}/`;
     if (!fileUrl.startsWith(ownPrefix)) return json({ error: "file_url must be your own upload" }, 403);
 
+    // A Daily Challenge entry: the AI also checks the photo fits today's prompt.
+    // The database only keeps the challenge tag on photos approved for it.
+    let challenge: { prompt: string; tag: string } | null = null;
+    if (body.challenge === true) {
+      const { data } = await admin.rpc("todays_challenge");
+      if (data?.tag) challenge = data;
+    }
+    let fitsChallenge = false;
+
     let flagged: boolean;
     let categories: string[];
     // deno-lint-ignore no-explicit-any
     let l: any = {};
     try {
       if (GEMINI_API_KEY) {
-        ({ flagged, categories, labels: l } = await geminiCheck(fileUrl));
+        ({ flagged, categories, labels: l, fitsChallenge } = await geminiCheck(fileUrl, challenge?.prompt));
       } else {
         const [moderation, labels] = await Promise.allSettled([moderate(fileUrl), describe(fileUrl)]);
         if (moderation.status === "rejected") throw moderation.reason;
         ({ flagged, categories } = moderation.value);
+        fitsChallenge = true; // the OpenAI path has no fit check
         // Labels are a nice-to-have: an approved image still posts if labelling failed
         if (labels.status === "rejected") console.error(labels.reason);
         else l = labels.value;
@@ -140,9 +150,14 @@ Deno.serve(async (req) => {
 
     const reason = flagged ? `Flagged: ${categories.join(", ") || "unsafe content"}` : "ok";
 
-    const { error: saveError } = await admin
+    const approval = { file_url: fileUrl, created_by_id: user.id, approved: !flagged, reason };
+    let { error: saveError } = await admin
       .from("media_approvals")
-      .upsert({ file_url: fileUrl, created_by_id: user.id, approved: !flagged, reason });
+      .upsert({ ...approval, challenge_tag: challenge && fitsChallenge ? challenge.tag : null });
+    // challenge_tag column not added yet: save the safety verdict alone
+    if (saveError && /challenge_tag/.test(saveError.message || "")) {
+      ({ error: saveError } = await admin.from("media_approvals").upsert(approval));
+    }
     if (saveError) throw saveError;
 
     if (flagged) {
@@ -155,6 +170,7 @@ Deno.serve(async (req) => {
     return json({
       safe: true,
       reason,
+      fits_challenge: challenge ? fitsChallenge : null,
       title: typeof l.title === "string" ? l.title.slice(0, 80) : null,
       category: CATEGORIES.includes(l.category) ? l.category : null,
       hashtags: cleanHashtags(l.hashtags),

@@ -19,6 +19,8 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
   const [status, setStatus] = useState("");
   const [dragging, setDragging] = useState(false);
   const [user, setUser] = useState(null);
+  // One challenge entry per person per day: true once we know they've entered
+  const [alreadyEntered, setAlreadyEntered] = useState(false);
   const fileInputRef = useRef(null);
   const { toast } = useToast();
 
@@ -30,6 +32,10 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
         if (await base44.auth.isAuthenticated()) {
           const me = await base44.auth.me();
           if (alive) setUser(me);
+          if (challenge?.tag) {
+            const entered = await base44.rpc("my_challenge_entry_today").catch(() => false);
+            if (alive) setAlreadyEntered(entered === true);
+          }
         }
       } catch {
         // signed out or session error — treat as guest
@@ -38,7 +44,9 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [challenge?.tag]);
+
+  const entering = !!challenge?.tag && !alreadyEntered;
 
   const handleFile = (f) => {
     setFile(f);
@@ -63,6 +71,8 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
       let hashtags = [];
       let aiTitle = null;
       let emojis = [];
+      // videos aren't AI-checked, so they can't enter the challenge
+      let fitsChallenge = entering && !file.type.startsWith("video") ? null : false;
 
       if (mediaType === "image") {
         // Images must pass the AI safety scan — the database rejects unapproved
@@ -70,7 +80,7 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
         setStatus("AI safety scan, auto-title & tagging…");
         let analysis;
         try {
-          const res = await base44.functions.invoke("analyzePostMedia", { file_url });
+          const res = await base44.functions.invoke("analyzePostMedia", { file_url, challenge: entering });
           analysis = res.data || {};
         } catch (e) {
           console.error(e);
@@ -95,7 +105,9 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
         hashtags = analysis.hashtags || [];
         aiTitle = analysis.title || null;
         emojis = analysis.emojis || [];
+        if (entering) fitsChallenge = analysis.fits_challenge !== false;
       }
+      const isEntry = entering && fitsChallenge !== false;
 
       const pollChoices = pollOptions.map((o) => o.trim()).filter(Boolean);
       const poll =
@@ -117,20 +129,32 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
         is_trending: false,
         expires_at: expiresAt,
         category,
-        // a challenge entry always carries the challenge's tag
-        hashtags: challenge?.tag ? [...new Set([challenge.tag, ...hashtags])].slice(0, 6) : hashtags,
+        // a challenge entry carries the challenge's tag (the database also checks it)
+        hashtags: isEntry ? [...new Set([challenge.tag, ...hashtags])].slice(0, 6) : hashtags,
         emojis,
         ...(poll ? { poll } : {}),
       });
-      toast({ title: "Published to the Live Grid!" });
+      if (entering && !isEntry) {
+        toast({
+          title: "Posted, but not as a challenge entry",
+          description: file.type.startsWith("video")
+            ? "Only photos can enter the Daily Challenge."
+            : `The AI didn't think this photo matches "${challenge.prompt}". It's live as a normal post.`,
+        });
+      } else {
+        toast({ title: isEntry ? "You're in today's challenge! 📸" : "Published to the Live Grid!" });
+      }
       onCreated();
       onClose();
     } catch (e) {
       console.error(e);
       const tooBig = /exceeded the maximum|too large|413/i.test(String(e?.message || ""));
+      const slowDown = /slow down/i.test(String(e?.message || ""));
       toast({
         title: "Upload failed",
-        description: tooBig
+        description: slowDown
+          ? "You can post up to 10 times an hour. Try again a little later."
+          : tooBig
           ? "That file is too big — the limit is 50 MB."
           : "Something went wrong — please try again.",
         variant: "destructive",
@@ -175,16 +199,29 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
             </span>
           </div>
         )}
-        {challenge?.tag && (
-          <div className="-mt-1 rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-300">
-              📸 Joining today's challenge
-            </p>
-            <p className="text-xs font-bold text-white">
-              {challenge.prompt} <span className="text-cyan-300">{challenge.tag}</span>
-            </p>
-          </div>
-        )}
+        {challenge?.tag &&
+          (alreadyEntered ? (
+            <div className="-mt-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-300">
+                ✅ You've already entered today's challenge
+              </p>
+              <p className="text-xs text-gray-400">
+                One entry per person per day. This one will post as a normal post.
+              </p>
+            </div>
+          ) : (
+            <div className="-mt-1 rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-300">
+                📸 Joining today's challenge
+              </p>
+              <p className="text-xs font-bold text-white">
+                {challenge.prompt} <span className="text-cyan-300">{challenge.tag}</span>
+              </p>
+              <p className="mt-0.5 text-[10px] text-gray-400">
+                One entry per day, so pick your best shot. Photos that don't match the prompt post normally.
+              </p>
+            </div>
+          ))}
         <div
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
