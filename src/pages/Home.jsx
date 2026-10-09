@@ -186,7 +186,7 @@ export default function Home() {
         />
         <TrendingBelt
           posts={beltPosts}
-          title={showingHot ? "Hot Right Now" : "24-Hour Trending Belt"}
+          race={showingHot}
           onVote={handleVote}
           onOpen={setActivePost}
         />

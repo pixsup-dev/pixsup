@@ -5,7 +5,12 @@ import { engagementScore } from "@/lib/engagement";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
-export default function TrendingBelt({ posts, onVote, onOpen, title = "24-Hour Trending Belt" }) {
+// Score a post needs to make the belt (matches the server's promotion rule)
+const TRENDING_SCORE = 20;
+
+// The 24-Hour Trending Belt. Until something has trended (race), it shows the
+// posts closest to getting in, each with its progress toward 20 points.
+export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
   const ref = useRef(null);
   const [votedIds, setVotedIds] = useState(() => new Set());
 
@@ -28,11 +33,18 @@ export default function TrendingBelt({ posts, onVote, onOpen, title = "24-Hour T
 
   return (
     <section className="mb-6">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-orange-400">
-          <Flame className="h-3.5 w-3.5" /> {title}
-        </h2>
-        <div className="flex gap-1.5">
+      <div className="mb-3 flex items-end justify-between gap-2 px-1">
+        <div>
+          <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-orange-400">
+            <Flame className="h-3.5 w-3.5" /> 24-Hour Trending Belt
+          </h2>
+          <p className="mt-0.5 text-[11px] text-gray-400">
+            {race
+              ? "Nothing has made it yet. 20 points gets a post in for 24 hours. Closest so far:"
+              : "The crowd pushed these past 20 points, so they live for 24 hours."}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-1.5">
           <button
             onClick={() => scrollBy(-1)}
             className="spring-tap rounded-full border border-cyan-400/40 bg-cyan-400/10 p-1 text-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.4)] transition hover:bg-cyan-400/20 active:scale-95"
@@ -89,6 +101,21 @@ export default function TrendingBelt({ posts, onVote, onOpen, title = "24-Hour T
                     <span className="block truncate text-[10px] font-semibold text-gray-200">
                       {post.title || "Untitled"}
                     </span>
+                    {race && (
+                      <span className="mt-1.5 block">
+                        <span className="block h-1.5 overflow-hidden rounded-full bg-white/10">
+                          <span
+                            className="block h-full rounded-full bg-gradient-to-r from-orange-500 to-yellow-400"
+                            style={{
+                              width: `${Math.min(100, (engagementScore(post) * 100) / TRENDING_SCORE)}%`,
+                            }}
+                          />
+                        </span>
+                        <span className="mt-0.5 block text-[10px] font-bold text-orange-300">
+                          {Math.min(engagementScore(post), TRENDING_SCORE)}/{TRENDING_SCORE} pts to trend
+                        </span>
+                      </span>
+                    )}
                   </div>
                 </button>
                 <div className="px-2 pb-2">
