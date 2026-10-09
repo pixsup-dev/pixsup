@@ -8,6 +8,7 @@ const SUPPORT_EMAIL = "support@pixsup.com";
 
 const GUIDELINES = [
   "Zero tolerance for objectionable content — harassment, hate speech, threats, or explicit material is removed and accounts are terminated.",
+  "Every image is checked by AI moderation before it reaches the grid; unsafe images are rejected.",
   "Moderators review reported posts and chat messages, and remove anything that breaks these rules.",
   "Community reports are acted on swiftly — 3 independent reports auto-hide a post immediately.",
   "Report or block any user from the 3-dot menu on their post, and manage your blocks here at any time.",
