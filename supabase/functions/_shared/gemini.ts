@@ -3,10 +3,11 @@
 
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 // "latest" aliases track Google's current Flash models, so retirements don't
-// break uploads. When the first is overloaded or rate-limited, try the next.
+// break uploads. Flash-Lite answers in a few seconds; full Flash is the backup
+// when Lite is overloaded, rate-limited or slow.
 const GEMINI_MODELS = [
-  Deno.env.get("GEMINI_MODEL") || "gemini-flash-latest",
-  "gemini-flash-lite-latest",
+  Deno.env.get("GEMINI_MODEL") || "gemini-flash-lite-latest",
+  "gemini-flash-latest",
 ];
 const RETRYABLE = new Set([429, 500, 503]);
 
@@ -58,6 +59,8 @@ export async function geminiCheck(imageUrl: string) {
       responseMimeType: "application/json",
       responseSchema: GEMINI_SCHEMA,
       maxOutputTokens: 2048,
+      // A safe/unsafe call doesn't need long reasoning, and thinking is slow
+      thinkingConfig: { thinkingLevel: "low" },
     },
   });
 
@@ -70,9 +73,14 @@ export async function geminiCheck(imageUrl: string) {
         method: "POST",
         headers: { "x-goog-api-key": GEMINI_API_KEY!, "Content-Type": "application/json" },
         body: request,
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(15000),
       }
-    );
+    ).catch((e) => {
+      // a slow model counts as unavailable: move on to the next one
+      if (i === GEMINI_MODELS.length - 1) throw e;
+      return null;
+    });
+    if (!res) continue;
     data = await res.json().catch(() => ({}));
     if (res.ok) break;
     if (!RETRYABLE.has(res.status) || i === GEMINI_MODELS.length - 1) {
