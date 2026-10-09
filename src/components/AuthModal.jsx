@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { preloadCaptcha } from "@/lib/captcha";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { X, Apple, Chrome, Mail, Loader2 } from "lucide-react";
@@ -10,6 +11,8 @@ import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 const APPLE_SIGN_IN_ENABLED = false;
 
 export default function AuthModal({ onClose }) {
+  // the sign-up/log-in bot check loads while they type
+  useEffect(() => preloadCaptcha(), []);
   useBodyScrollLock();
   const navigate = useNavigate();
   const { toast } = useToast();

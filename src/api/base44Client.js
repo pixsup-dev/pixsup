@@ -2,6 +2,7 @@
 // Components keep calling base44.entities / auth / integrations / functions with
 // the same shapes; everything below translates those calls to Supabase.
 import { createClient } from "@supabase/supabase-js";
+import { captchaToken } from "@/lib/captcha";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -227,7 +228,9 @@ const auth = {
   },
 
   async loginViaEmailPassword(email, password) {
-    const data = unwrap(await supabase.auth.signInWithPassword({ email, password }));
+    const data = unwrap(
+      await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: await captchaToken() } })
+    );
     return { user: data.user, access_token: data.session?.access_token };
   },
 
@@ -248,7 +251,7 @@ const auth = {
       await supabase.auth.signUp({
         email,
         password,
-        options: { data: { terms_accepted: acceptedTerms } },
+        options: { data: { terms_accepted: acceptedTerms }, captchaToken: await captchaToken() },
       })
     );
     // Supabase answers "success" with no identities when the email is already taken
@@ -264,7 +267,7 @@ const auth = {
   },
 
   async resendOtp(email) {
-    unwrap(await supabase.auth.resend({ type: "signup", email }));
+    unwrap(await supabase.auth.resend({ type: "signup", email, options: { captchaToken: await captchaToken() } }));
   },
 
   // Supabase stores the session itself — kept so existing callers don't break
@@ -276,6 +279,7 @@ const auth = {
     unwrap(
       await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: absoluteUrl("/reset-password"),
+        captchaToken: await captchaToken(),
       })
     );
   },
