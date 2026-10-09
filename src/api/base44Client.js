@@ -204,6 +204,8 @@ const auth = {
       city: profile?.city ?? null,
       morning_pulse: profile?.morning_pulse ?? false,
       avatar_url: profile?.avatar_url ?? null,
+      radar_topics: profile?.radar_topics ?? [],
+      radar_city: profile?.radar_city ?? false,
       created_date: user.created_at,
     };
   },

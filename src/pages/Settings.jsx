@@ -4,6 +4,7 @@ import { useBlocklist, handleLabel } from "@/hooks/useBlocklist";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import PreferencesSection from "@/components/PreferencesSection";
 import AlertsSection from "@/components/AlertsSection";
+import RadarSection from "@/components/RadarSection";
 import { base44 } from "@/api/base44Client";
 import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert, Sparkles, LogOut } from "lucide-react";
 
@@ -73,6 +74,7 @@ export default function Settings() {
 
       {user && <PreferencesSection user={user} onSaved={refreshUser} />}
       {user && <AlertsSection />}
+      {user && <RadarSection user={user} onSaved={refreshUser} />}
 
       {/* Blocked Users */}
       <section className="mb-6">

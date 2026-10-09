@@ -13,6 +13,7 @@ import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import { formatRemaining } from "@/lib/time";
 import { useMembers } from "@/hooks/useUsernames";
 import Avatar from "@/components/Avatar";
+import WatchButton from "@/components/WatchButton";
 import BoostPanel from "@/components/BoostPanel";
 import EmojiBurst from "@/components/EmojiBurst";
 import { isBreaking } from "@/lib/breaking";
@@ -210,6 +211,12 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
             )}
             <div className="flex items-center gap-2">
               <PostActionMenu post={current} />
+              <WatchButton
+                post={current}
+                user={user}
+                onSignIn={onSignIn}
+                className="rounded-full border border-white/10 bg-white/5 p-1.5 text-gray-300 transition hover:border-orange-400/40 hover:text-orange-300"
+              />
               <button
                 aria-label="Save post"
                 onClick={() => toggleSave(current.id)}
