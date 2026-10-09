@@ -90,6 +90,12 @@
    while its faces use backface-visibility made images flicker, and a
    transformed tile traps the fixed-position report menu inside it. */
 
+/* News tiles: a thin blue frame, so news and community posts are easy to
+   tell apart. Defined before the heatmaps so heat always wins. */
+.news-tile {
+  border: 2px solid rgba(56, 189, 248, 0.55);
+}
+
 .heatmap-gold {
   box-shadow: 0 0 12px 2px rgba(234, 179, 8, 0.6);
   border: 2px solid #eab308;
@@ -102,6 +108,18 @@
 .survivor-tile {
   box-shadow: 0 0 16px 3px rgba(250, 204, 21, 0.7);
   border: 2px solid #facc15;
+}
+
+/* Last 60 seconds of a post's life: a red heartbeat glow */
+@keyframes lastBreath {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.9), 0 0 10px 2px rgba(239, 68, 68, 0.35); }
+  50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 1), 0 0 26px 8px rgba(239, 68, 68, 0.6); }
+}
+.last-breath {
+  animation: lastBreath 1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .last-breath { animation: none; box-shadow: 0 0 0 3px rgba(239, 68, 68, 1); }
 }
 
 /* 3D tile flip */

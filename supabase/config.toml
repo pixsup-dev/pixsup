@@ -23,3 +23,12 @@ verify_jwt = false
 
 [functions.stripeWebhook]
 verify_jwt = false
+
+[functions.postText]
+verify_jwt = false
+
+[functions.explainNews]
+verify_jwt = false
+
+[functions.morningPulse]
+verify_jwt = false

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Siren, Zap } from "lucide-react";
 import { Image } from "@/components/ui/image";
 import { formatRemaining } from "@/lib/time";
+import LastBreath, { inLastBreath } from "@/components/LastBreath";
 
 const DYING_MS = 10 * 60 * 1000;
 const CRITICAL_MS = 2 * 60 * 1000;
@@ -53,9 +54,10 @@ export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
               onClick={() => onOpen(post)}
               className={`relative w-36 shrink-0 snap-start overflow-hidden rounded-xl border bg-[#151c28] text-left sm:w-40 ${
                 critical ? "border-red-500/70" : "border-red-500/30"
-              }`}
+              } ${inLastBreath(post, remaining) ? "last-breath" : ""}`}
             >
               <div className="relative aspect-square">
+                {inLastBreath(post, remaining) && <LastBreath remaining={remaining} />}
                 <Image
                   src={post.thumbnail_url || post.media_url}
                   alt={post.title}

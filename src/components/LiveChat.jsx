@@ -68,7 +68,12 @@ export default function LiveChat({ post, user, onSignIn, onPresence }) {
     if (!body || sending) return;
     setSending(true);
     try {
-      const m = await base44.rpc("send_chat", { p_post_id: post.id, p_text: body });
+      // postText runs the AI check before send_chat saves the message
+      const { data: m } = await base44.functions.invoke("postText", {
+        kind: "chat",
+        post_id: post.id,
+        text: body,
+      });
       setText("");
       setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
     } catch (e) {

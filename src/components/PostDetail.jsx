@@ -14,6 +14,7 @@ import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
 import BoostPanel from "@/components/BoostPanel";
 import EmojiBurst from "@/components/EmojiBurst";
+import LastBreath, { inLastBreath } from "@/components/LastBreath";
 import PollCard from "@/components/PollCard";
 import LiveChat from "@/components/LiveChat";
 import AdminPollEditor from "@/components/AdminPollEditor";
@@ -87,18 +88,26 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
     }
   };
 
+  const [sendingComment, setSendingComment] = useState(false);
   const addComment = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || sendingComment) return;
+    setSendingComment(true);
     try {
-      // a comment adds +10 bonus minutes of life and bumps the engagement score
-      // (add_comment saves the comment, updates the post and notifies its owner)
-      const updated = await base44.rpc("add_comment", { p_post_id: post.id, p_text: text });
+      // postText runs the AI check, then add_comment saves the comment, adds
+      // +10 minutes of life and notifies the owner
+      const { data: updated } = await base44.functions.invoke("postText", {
+        kind: "comment",
+        post_id: post.id,
+        text,
+      });
       setText("");
       const updates = { comment_count: updated.comment_count, expires_at: updated.expires_at };
       setCurrent((c) => ({ ...c, ...updates }));
       loadComments();
     } catch (e) {
-      console.error(e);
+      toast({ title: e.message || "Couldn't post your comment", variant: "destructive" });
+    } finally {
+      setSendingComment(false);
     }
   };
 
@@ -152,6 +161,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
 
         <div className="relative bg-black md:h-full md:min-w-0 md:flex-1">
           <EmojiBurst post={current} size="text-3xl" />
+          {inLastBreath(current, remaining) && <LastBreath remaining={remaining} big />}
           {current.media_type === "video" ? (
             <video
               src={current.media_url}
@@ -201,7 +211,11 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
                 post={current}
                 className="rounded-full border border-white/10 bg-white/5 p-1.5 text-gray-300 transition hover:border-cyan-400/40 hover:text-cyan-300"
               />
-              <span className="flex items-center gap-1 font-mono text-xs font-bold text-orange-400">
+              <span
+                className={`flex items-center gap-1 font-mono text-xs font-bold ${
+                  inLastBreath(current, remaining) ? "animate-pulse text-red-400" : "text-orange-400"
+                }`}
+              >
                 <Hourglass className="h-3.5 w-3.5" /> {timer} remaining
               </span>
             </div>
@@ -360,9 +374,10 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
                   />
                   <button
                     onClick={addComment}
-                    className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95"
+                    disabled={sendingComment}
+                    className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
                   >
-                    Send
+                    {sendingComment ? "…" : "Send"}
                   </button>
                 </div>
               ) : (

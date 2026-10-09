@@ -9,6 +9,7 @@ import { reactionPalette } from "@/lib/reactions";
 import TopComment from "@/components/TopComment";
 import { isSpotlit } from "@/lib/boosts";
 import EmojiBurst from "@/components/EmojiBurst";
+import LastBreath, { inLastBreath } from "@/components/LastBreath";
 
 function heatClass(hits) {
   if (hits >= 15) return "heatmap-gold";
@@ -59,9 +60,11 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
 
   return (
     <div
-      className={`flip-card rolling-tile relative aspect-square ${heatClass(
+      className={`flip-card rolling-tile relative aspect-square ${post.isNews ? "news-tile rounded-xl" : ""} ${heatClass(
         post.hits || 0
-      )} ${flipped ? "flipped" : ""} ${survivor ? "survivor-tile" : ""}`}
+      )} ${flipped ? "flipped" : ""} ${survivor ? "survivor-tile" : ""} ${
+        inLastBreath(post, remaining) ? "last-breath rounded-xl" : ""
+      }`}
       style={{ animationDelay: `${(index % 6) * 1}s` }}
       onPointerDown={startPress}
       onPointerUp={cancelPress}
@@ -75,6 +78,7 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
             className="block h-full w-full text-left"
           >
             <div className="relative h-full w-full">
+              {inLastBreath(post, remaining) && <LastBreath remaining={remaining} />}
               <Image
                 src={media}
                 alt={post.title}

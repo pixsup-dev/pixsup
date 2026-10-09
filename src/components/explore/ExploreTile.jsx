@@ -3,6 +3,7 @@ import { Image } from "@/components/ui/image";
 import { Bookmark, Hourglass, Zap } from "lucide-react";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import EmojiBurst from "@/components/EmojiBurst";
+import LastBreath, { inLastBreath } from "@/components/LastBreath";
 import { formatRemaining } from "@/lib/time";
 
 const DYING_MS = 10 * 60 * 1000;
@@ -19,7 +20,9 @@ export default function ExploreTile({ post, now, big = false, onOpen }) {
       onClick={() => onOpen(post)}
       className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-[#151c28] ${
         big ? "col-span-2 row-span-2" : "aspect-square"
-      } ${dying ? "border-red-500/60" : "border-white/5"}`}
+      } ${dying ? "border-red-500/60" : post.isNews ? "news-tile" : "border-white/5"} ${
+        inLastBreath(post, remaining) ? "last-breath" : ""
+      }`}
     >
       <Image
         src={media}
@@ -29,6 +32,7 @@ export default function ExploreTile({ post, now, big = false, onOpen }) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
       <EmojiBurst post={post} size={big ? "text-3xl" : "text-xl"} />
+      {inLastBreath(post, remaining) && <LastBreath remaining={remaining} big={big} />}
 
       <span className="absolute left-1.5 top-1.5 flex items-center gap-1">
         <span
