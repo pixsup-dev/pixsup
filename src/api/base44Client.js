@@ -31,6 +31,10 @@ const TABLES = {
   Profile: "profiles",
   Block: "blocks",
   SavedPost: "saved_posts",
+  CommentVote: "comment_votes",
+  PollVote: "poll_votes",
+  ChatMessage: "chat_messages",
+  ChatReport: "chat_reports",
 };
 
 // Normalize Supabase/PostgREST errors into thrown Errors with a status, like the Base44 SDK

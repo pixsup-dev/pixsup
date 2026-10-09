@@ -14,6 +14,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [queue, setQueue] = useState([]);
   const [banned, setBanned] = useState([]);
+  const [chatReports, setChatReports] = useState([]);
   const [busy, setBusy] = useState(null); // `${action}:${id}` while running
   const [armed, setArmed] = useState(null); // destructive action awaiting a 2nd tap
 
@@ -41,6 +42,8 @@ export default function Admin() {
           .sort((a, b) => b.reporters.size - a.reporters.size || (b.latest > a.latest ? 1 : -1))
       );
       setBanned(bannedProfiles);
+      // Reported live-chat messages (copies: the messages themselves vanish)
+      setChatReports(await base44.entities.ChatReport.list("-created_date", 200).catch(() => []));
     } catch (e) {
       console.error(e);
       toast({ title: "Couldn't load reports", variant: "destructive" });
@@ -172,6 +175,61 @@ export default function Admin() {
             );
           })}
         </div>
+      )}
+
+      <h2 className="mb-2 mt-8 text-xs font-bold uppercase tracking-widest text-red-400">
+        Reported chat messages
+      </h2>
+      {chatReports.length === 0 ? (
+        <p className="text-xs text-gray-500">No reported chat messages.</p>
+      ) : (
+        <ul className="space-y-2">
+          {Object.values(
+            chatReports.reduce((acc, r) => {
+              (acc[r.message_id] ||= { ...r, reporters: 0, ids: [] }).reporters += 1;
+              acc[r.message_id].ids.push(r.id);
+              return acc;
+            }, {})
+          ).map((r) => (
+            <li key={r.message_id} className="space-y-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+              <p className="text-xs text-gray-200">
+                <span className="font-bold text-violet-300">@{r.author_name}</span> {r.text}
+              </p>
+              <p className="text-[11px] text-orange-300">
+                {r.reporters} reporter{r.reporters === 1 ? "" : "s"}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  disabled={!!busy}
+                  onClick={() =>
+                    run(`dismiss:${r.message_id}`, () => base44.entities.ChatReport.deleteMany({ id: r.ids }), "Report dismissed")
+                  }
+                  className={`${btn} border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10`}
+                >
+                  Dismiss
+                </button>
+                {r.author_id && r.author_id !== user.id && (
+                  <button
+                    disabled={!!busy}
+                    onClick={confirmFirst(`chatban:${r.message_id}`, () =>
+                      run(
+                        `chatban:${r.message_id}`,
+                        async () => {
+                          await base44.rpc("admin_set_banned", { p_user: r.author_id, p_banned: true, p_remove_posts: true });
+                          await base44.entities.ChatReport.deleteMany({ id: r.ids });
+                        },
+                        "Author banned"
+                      )
+                    )}
+                    className={`${btn} bg-red-600 text-white hover:bg-red-500`}
+                  >
+                    {armed === `chatban:${r.message_id}` ? "Tap again to ban" : "Ban author"}
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
       <h2 className="mb-2 mt-8 text-xs font-bold uppercase tracking-widest text-red-400">Banned accounts</h2>

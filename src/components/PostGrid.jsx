@@ -88,6 +88,11 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                 <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 font-mono text-[10px] font-bold text-orange-400">
                   <Hourglass className="h-2.5 w-2.5" /> {timer}
                 </span>
+                {post.poll && (
+                  <span className="rounded-full bg-violet-500 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+                    📊
+                  </span>
+                )}
                 {post.isPromoted && (
                   <span className="rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
                     PROMOTED

@@ -13,6 +13,10 @@ import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import { formatRemaining } from "@/lib/time";
 import useUsernames from "@/hooks/useUsernames";
 import BoostPanel from "@/components/BoostPanel";
+import PollCard from "@/components/PollCard";
+import LiveChat from "@/components/LiveChat";
+import AdminPollEditor from "@/components/AdminPollEditor";
+import { useBlocklist } from "@/hooks/useBlocklist";
 import { moodSummary, reactionPalette } from "@/lib/reactions";
 
 export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
@@ -26,6 +30,11 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   const [now, setNow] = useState(() => Date.now());
   const { toast } = useToast();
   const { isSaved, toggleSave } = useSavedPosts();
+  const { blocked } = useBlocklist();
+  const [tab, setTab] = useState("comments");
+  const [hereNow, setHereNow] = useState(0);
+  const [myCommentVotes, setMyCommentVotes] = useState(() => new Set());
+  const merge = (updates) => setCurrent((c) => ({ ...c, ...updates }));
 
   const palette = reactionPalette(current);
   const mood = current.isNews ? moodSummary(current.reactions) : null;
@@ -39,6 +48,14 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
     try {
       const c = await base44.entities.Comment.filter({ post_id: post.id });
       setComments(c);
+      if (user && c.length) {
+        const mine = await base44.entities.CommentVote.filter(
+          { comment_id: c.map((x) => x.id), user_id: user.id },
+          undefined,
+          1000
+        );
+        setMyCommentVotes(new Set(mine.map((v) => v.comment_id)));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -78,6 +95,29 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
       console.error(e);
     }
   };
+
+  // 🔥 a comment; the most-voted one becomes the post's Hot Take
+  const voteComment = async (c) => {
+    if (!isAuthenticated) return onSignIn?.();
+    if (myCommentVotes.has(c.id) || c.created_by_id === user?.id) return;
+    setMyCommentVotes((prev) => new Set(prev).add(c.id));
+    try {
+      const votes = await base44.rpc("vote_comment", { p_comment_id: c.id });
+      if (votes != null) {
+        setComments((prev) => prev.map((x) => (x.id === c.id ? { ...x, votes } : x)));
+      }
+    } catch (e) {
+      toast({ title: e.message || "Couldn't vote", variant: "destructive" });
+    }
+  };
+  const shownComments = comments
+    .filter((c) => !blocked.includes(c.created_by_id))
+    .sort(
+      (a, b) =>
+        (b.votes || 0) - (a.votes || 0) ||
+        new Date(a.created_date).getTime() - new Date(b.created_date).getTime()
+    );
+  const hotTakeId = shownComments[0]?.votes > 0 ? shownComments[0].id : null;
 
   const remaining = current.expires_at
     ? Math.max(0, new Date(current.expires_at) - now)
@@ -177,6 +217,9 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
             </a>
           )}
 
+          <PollCard post={current} user={user} onSignIn={onSignIn} onUpdate={merge} />
+          {user?.role === "admin" && <AdminPollEditor post={current} onUpdate={merge} />}
+
           <BoostPanel post={current} user={user} />
 
           <div className="flex justify-around gap-2 rounded-xl bg-white/5 p-2 text-lg">
@@ -223,49 +266,95 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           </button>
 
           <div className="pt-1">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">
-              Comments ({comments.length})
-            </p>
-            <div className="mb-3 space-y-2">
-              {comments.map((c) => (
-                <div
-                  key={c.id}
-                  className="rounded-lg bg-white/5 px-3 py-2 text-sm text-gray-200"
+            <div className="mb-2 flex gap-1.5">
+              {[
+                ["comments", `💬 Comments (${shownComments.length})`],
+                ["live", `🔴 Live chat${hereNow > 1 ? ` · 👀 ${hereNow} here` : ""}`],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                    tab === id
+                      ? "bg-white text-black"
+                      : "border border-white/10 bg-white/5 text-gray-300 hover:text-white"
+                  }`}
                 >
-                  <span className="mr-1.5 text-xs font-bold text-cyan-300">
-                    @{names[c.created_by_id] || "member"}
-                  </span>
-                  {c.text}
-                </div>
+                  {label}
+                </button>
               ))}
-              {comments.length === 0 && (
-                <p className="text-xs text-gray-500">No comments yet</p>
+            </div>
+
+            {/* Always mounted so "N here" counts everyone viewing the post */}
+            <div hidden={tab !== "live"}>
+              <LiveChat post={current} user={user} onSignIn={onSignIn} onPresence={setHereNow} />
+            </div>
+
+            <div hidden={tab !== "comments"}>
+              <div className="mb-3 space-y-2">
+                {shownComments.map((c) => {
+                  const votedThis = myCommentVotes.has(c.id);
+                  const own = c.created_by_id === user?.id;
+                  return (
+                    <div
+                      key={c.id}
+                      className={`flex items-start gap-2 rounded-lg px-3 py-2 text-sm text-gray-200 ${
+                        c.id === hotTakeId ? "border border-orange-400/40 bg-orange-400/10" : "bg-white/5"
+                      }`}
+                    >
+                      <p className="min-w-0 flex-1">
+                        {c.id === hotTakeId && (
+                          <span className="mr-1.5 rounded bg-orange-500 px-1 py-0.5 text-[9px] font-black text-black">
+                            HOT TAKE
+                          </span>
+                        )}
+                        <span className="mr-1.5 text-xs font-bold text-cyan-300">
+                          @{names[c.created_by_id] || "member"}
+                        </span>
+                        {c.text}
+                      </p>
+                      <button
+                        onClick={() => voteComment(c)}
+                        disabled={own || votedThis}
+                        aria-label="Vote for this comment"
+                        className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold transition ${
+                          votedThis ? "bg-orange-500/30 text-orange-200" : "bg-white/5 text-gray-400 hover:text-orange-300"
+                        } disabled:cursor-default`}
+                      >
+                        🔥 {c.votes || 0}
+                      </button>
+                    </div>
+                  );
+                })}
+                {shownComments.length === 0 && (
+                  <p className="text-xs text-gray-500">No comments yet. Drop the first hot take.</p>
+                )}
+              </div>
+              {isAuthenticated ? (
+                <div className="flex gap-2">
+                  <input
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addComment()}
+                    placeholder="Add a comment..."
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={addComment}
+                    className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95"
+                  >
+                    Send
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={onSignIn}
+                  className="spring-tap w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200 transition hover:bg-white/10 active:scale-95"
+                >
+                  Sign in to comment
+                </button>
               )}
             </div>
-            {isAuthenticated ? (
-              <div className="flex gap-2">
-                <input
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addComment()}
-                  placeholder="Add a comment..."
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-                />
-                <button
-                  onClick={addComment}
-                  className="spring-tap rounded-xl bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20 active:scale-95"
-                >
-                  Send
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={onSignIn}
-                className="spring-tap w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200 transition hover:bg-white/10 active:scale-95"
-              >
-                Sign in to comment
-              </button>
-            )}
           </div>
         </div>
       </motion.div>

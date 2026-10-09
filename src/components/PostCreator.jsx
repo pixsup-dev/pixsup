@@ -11,6 +11,10 @@ export default function PostCreator({ onClose, onCreated }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [title, setTitle] = useState("");
+  // Optional poll: a question plus 2–4 options (empty options are dropped)
+  const [pollOpen, setPollOpen] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -93,6 +97,12 @@ export default function PostCreator({ onClose, onCreated }) {
         emojis = analysis.emojis || [];
       }
 
+      const pollChoices = pollOptions.map((o) => o.trim()).filter(Boolean);
+      const poll =
+        pollOpen && pollQuestion.trim() && pollChoices.length >= 2
+          ? { question: pollQuestion.trim(), options: pollChoices }
+          : null;
+
       setStatus("Publishing to the Live Grid…");
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       await base44.entities.Post.create({
@@ -109,6 +119,7 @@ export default function PostCreator({ onClose, onCreated }) {
         category,
         hashtags,
         emojis,
+        ...(poll ? { poll } : {}),
       });
       toast({ title: "Published to the Live Grid!" });
       onCreated();
@@ -208,6 +219,46 @@ export default function PostCreator({ onClose, onCreated }) {
           placeholder="Add a caption... (AI writes a title if empty)"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
         />
+        {pollOpen ? (
+          <div className="space-y-1.5 rounded-xl border border-violet-400/30 bg-violet-400/5 p-3">
+            <input
+              value={pollQuestion}
+              maxLength={120}
+              onChange={(e) => setPollQuestion(e.target.value)}
+              placeholder="Ask something, e.g. Which outfit?"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-violet-400 focus:outline-none"
+            />
+            {pollOptions.map((o, i) => (
+              <input
+                key={i}
+                value={o}
+                maxLength={60}
+                onChange={(e) =>
+                  setPollOptions(pollOptions.map((x, j) => (j === i ? e.target.value : x)))
+                }
+                placeholder={`Option ${i + 1}`}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-violet-400 focus:outline-none"
+              />
+            ))}
+            <div className="flex gap-3 pt-0.5 text-[11px] font-bold">
+              {pollOptions.length < 4 && (
+                <button onClick={() => setPollOptions([...pollOptions, ""])} className="text-violet-300">
+                  + Add option
+                </button>
+              )}
+              <button onClick={() => setPollOpen(false)} className="text-gray-400">
+                Remove poll
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setPollOpen(true)}
+            className="w-full rounded-xl border border-dashed border-violet-400/30 py-1.5 text-xs font-bold text-violet-300 transition hover:bg-violet-400/10"
+          >
+            📊 Add a poll (optional)
+          </button>
+        )}
         <button
           onClick={submit}
           disabled={!file || busy}

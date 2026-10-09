@@ -107,6 +107,7 @@ export default function WorldPulse({ posts, title = "World Pulse", onVote, onOpe
         <div className="flex items-center justify-between gap-2 p-2">
           <span className="truncate text-[11px] text-gray-400">
             {post.guest_author_id}
+            {post.poll && <span className="ml-1.5 font-bold text-violet-300">· 📊 Poll</span>}
             {mood && (
               <span className="ml-1.5 text-gray-300">
                 · {mood.pct}% {mood.emoji}
