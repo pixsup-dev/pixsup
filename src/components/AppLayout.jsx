@@ -5,6 +5,7 @@ import { base44, supabase } from "@/api/base44Client";
 import TopBar from "@/components/TopBar";
 import BottomNav from "@/components/BottomNav";
 import PostCreator from "@/components/PostCreator";
+import InstallPrompt from "@/components/InstallPrompt";
 import AuthModal from "@/components/AuthModal";
 import OnboardingModal from "@/components/OnboardingModal";
 import WelcomeModal, { WELCOME_SEEN_KEY } from "@/components/WelcomeModal";
@@ -273,6 +274,7 @@ export default function AppLayout() {
         }}
       />
       <BottomNav onUpload={() => openUpload()} onHome={resetFilters} unread={unread} user={user} />
+      <InstallPrompt />
       <AnimatePresence>
         {creatorOpen && (
           <PostCreator

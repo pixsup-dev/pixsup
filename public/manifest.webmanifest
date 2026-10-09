@@ -1,9 +1,12 @@
 {
+  "id": "/",
   "name": "Pixsup",
   "short_name": "Pixsup",
   "description": "Posts live only as long as people keep them alive.",
-  "start_url": "/",
+  "start_url": "/?source=homescreen",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0b0f17",
   "theme_color": "#0b0f17",
   "icons": [
