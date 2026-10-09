@@ -6,6 +6,8 @@ import TrendingBelt from "@/components/TrendingBelt";
 import WorldPulse from "@/components/WorldPulse";
 import RescueRow from "@/components/RescueRow";
 import Graveyard from "@/components/Graveyard";
+import { matchesSearch, searchTerms } from "@/lib/search";
+import useUsernames from "@/hooks/useUsernames";
 import DailyChallenge, { useTodaysChallenge } from "@/components/DailyChallenge";
 import RisingBelt from "@/components/RisingBelt";
 import PostGrid from "@/components/PostGrid";
@@ -71,7 +73,9 @@ export default function Home() {
     startY.current = null;
   };
 
-  const q = query.trim().toLowerCase();
+  const terms = searchTerms(query);
+  // posters' @usernames, so people can be found by name too (only while searching)
+  const names = useUsernames(terms.length ? posts.filter((p) => !p.isNews).map((p) => p.created_by_id) : []);
   const matchesFilter = (p) => {
     const title = (p.title || "").toLowerCase();
     const tag = category.replace("#", "").toLowerCase();
@@ -80,7 +84,7 @@ export default function Home() {
       (p.category || "").toLowerCase() === tag ||
       (p.hashtags || []).some((h) => h.toLowerCase() === category.toLowerCase()) ||
       keywordsForTag(category).some((k) => title.includes(k));
-    const inSearch = !q || title.includes(q);
+    const inSearch = matchesSearch(p, terms, names);
     return inCat && inSearch;
   };
 
@@ -91,7 +95,7 @@ export default function Home() {
   const pulseTag = category.toLowerCase();
   const worldPulse = isAllTag(category) || pulseTag === "#news" || pulseTag === "#world";
   // On the main feed, tabs switch the pulse between news topics that have live stories
-  const searchHit = (p) => !q || (p.title || "").toLowerCase().includes(q);
+  const searchHit = (p) => matchesSearch(p, terms, names);
   const pulseTopics = worldPulse
     ? NEWS_TOPICS.filter(
         (t) => t.id === "World" || posts.some((p) => p.isNews && !p.top_story && p.category === t.id)

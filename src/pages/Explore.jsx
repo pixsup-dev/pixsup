@@ -8,6 +8,8 @@ import PostDetail from "@/components/PostDetail";
 import { topHashtags } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 import useInfiniteCount from "@/hooks/useInfiniteCount";
+import { matchesSearch, searchTerms } from "@/lib/search";
+import useUsernames from "@/hooks/useUsernames";
 
 const PAGE = 30;
 const time = (d) => new Date(d).getTime();
@@ -58,17 +60,14 @@ export default function Explore() {
   }, [posts]);
 
   const query = q.trim().toLowerCase();
+  const terms = useMemo(() => searchTerms(q), [q]);
+  const names = useUsernames(terms.length ? posts.filter((p) => !p.isNews).map((p) => p.created_by_id) : []);
   const sort = SORTS.find((s) => s.id === sortId);
   const results = useMemo(() => {
-    const matches = (p) =>
-      !query ||
-      (p.title || "").toLowerCase().includes(query) ||
-      (p.category || "").toLowerCase().includes(query) ||
-      (p.hashtags || []).some((h) => h.toLowerCase().includes(query)) ||
-      (p.guest_author_id || "").toLowerCase().includes(query);
+    const matches = (p) => matchesSearch(p, terms, names);
     const inCity = (p) => sort.id !== "city" || (!!myCity && (p.city || "").toLowerCase() === myCity);
     return posts.filter((p) => sort.filter(p) && inCity(p) && matches(p)).sort(sort.sort);
-  }, [posts, query, sort, myCity]);
+  }, [posts, terms, names, sort, myCity]);
 
   const shown = results.slice(0, visible);
 
