@@ -1,5 +1,6 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { admin, callerOf, SUPABASE_URL } from "../_shared/supabase.ts";
+import { CATEGORIES, GEMINI_API_KEY, geminiCheck } from "../_shared/gemini.ts";
 
 // Moderates an uploaded image and suggests a title, category, hashtags and
 // emojis for it. The verdict is recorded in media_approvals; the posts table
@@ -8,16 +9,12 @@ import { admin, callerOf, SUPABASE_URL } from "../_shared/supabase.ts";
 // Secrets (set with `supabase secrets set`, never in VITE_ vars). Either AI works;
 // Gemini is used when its key is set:
 //   GEMINI_API_KEY   Google AI Studio key (has a free tier)
-//   GEMINI_MODEL     optional model override (default below)
+//   GEMINI_MODEL     optional model override (default in _shared/gemini.ts)
 //   OPENAI_API_KEY   OpenAI key
 //   OPENAI_MODEL     optional vision model override (default below)
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-4.1-mini";
-
-const CATEGORIES = ["Nature", "Urban", "Art", "Food", "Travel", "Sports", "Gaming", "AI"];
 
 const ANALYSIS_SCHEMA = {
   type: "object",
@@ -87,84 +84,6 @@ async function describe(imageUrl: string) {
   });
   return JSON.parse(data.choices[0].message.content);
 }
-
-// ---------------------------------------------------------------------------
-// Gemini: one call checks the image against the rules and labels it
-// ---------------------------------------------------------------------------
-
-const GEMINI_SCHEMA = {
-  type: "OBJECT",
-  required: ["safe", "violations", "title", "category", "hashtags", "emojis"],
-  properties: {
-    safe: { type: "BOOLEAN" },
-    violations: { type: "ARRAY", items: { type: "STRING" } },
-    title: { type: "STRING" },
-    category: { type: "STRING", enum: CATEGORIES },
-    hashtags: { type: "ARRAY", items: { type: "STRING" } },
-    emojis: { type: "ARRAY", items: { type: "STRING" } },
-  },
-};
-
-const GEMINI_PROMPT =
-  "You moderate and label photos for Pixsup, a public social photo grid open to everyone 13+. " +
-  "Set safe=false if the image contains any of: nudity or sexual content, graphic violence or gore, " +
-  "self-harm, hate symbols or hateful content, weapons used to threaten, illegal drugs, " +
-  "or content sexualising minors. List each problem in violations (empty when safe). " +
-  "Ordinary photos (people, pets, food, places, memes, art, news events shown without gore) are safe. " +
-  "Also return a catchy title (max 60 characters, no hashtags), the single best category, " +
-  "3-5 single-word hashtags without the # sign, and 2-3 fitting emojis.";
-
-async function geminiCheck(imageUrl: string) {
-  const image = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
-  if (!image.ok) throw new Error(`Couldn't read the upload (${image.status})`);
-  const mimeType = image.headers.get("content-type")?.split(";")[0] || "image/jpeg";
-  const bytes = new Uint8Array(await image.arrayBuffer());
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-    {
-      method: "POST",
-      headers: { "x-goog-api-key": GEMINI_API_KEY!, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: GEMINI_PROMPT }, { inline_data: { mime_type: mimeType, data: btoa(binary) } }],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: GEMINI_SCHEMA,
-          maxOutputTokens: 400,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
-      signal: AbortSignal.timeout(25000),
-    }
-  );
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Gemini → ${res.status}: ${data?.error?.message || "request failed"}`);
-
-  // Google's own safety filters refusing the image is a rejection too
-  const blocked = data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason === "SAFETY";
-  if (blocked) return { flagged: true, categories: ["blocked by safety filter"], labels: {} };
-
-  const textOut = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("");
-  if (!textOut) throw new Error("Gemini returned no verdict");
-  const out = JSON.parse(textOut);
-  if (typeof out.safe !== "boolean") throw new Error("Gemini returned no verdict");
-  return {
-    flagged: !out.safe,
-    categories: Array.isArray(out.violations) ? out.violations.map(String).slice(0, 5) : [],
-    labels: out,
-  };
-}
-
-// ---------------------------------------------------------------------------
 
 function cleanHashtags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return [];
