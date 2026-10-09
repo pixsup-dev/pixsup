@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import TopBar from "@/components/TopBar";
@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import PostCreator from "@/components/PostCreator";
 import AuthModal from "@/components/AuthModal";
 import OnboardingModal from "@/components/OnboardingModal";
+import WelcomeModal, { WELCOME_SEEN_KEY } from "@/components/WelcomeModal";
 import { HASHTAG_POOLS, topHashtags } from "@/components/CategoryChips";
 import useNotifications from "@/hooks/useNotifications";
 import { useBlocklist, authorKeyOf, blocklist } from "@/hooks/useBlocklist";
@@ -24,6 +25,27 @@ export default function AppLayout() {
   const [authOpen, setAuthOpen] = useState(false);
   // undefined = checking session, null = guest, object = signed-in member
   const [user, setUser] = useState(undefined);
+
+  // First visit: explain the app. Not on top of a shared post someone came to
+  // see (they get it next time they land on the feed).
+  const { pathname } = useLocation();
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  useEffect(() => {
+    if (pathname.startsWith("/p/") || pathname === "/terms" || pathname === "/privacy") return;
+    try {
+      if (!localStorage.getItem(WELCOME_SEEN_KEY)) setWelcomeOpen(true);
+    } catch {
+      // storage blocked: skip the walkthrough rather than show it every visit
+    }
+  }, [pathname]);
+  const closeWelcome = () => {
+    setWelcomeOpen(false);
+    try {
+      localStorage.setItem(WELCOME_SEEN_KEY, "1");
+    } catch {
+      // ignore
+    }
+  };
 
   // Real-time notifications hub state, shared by the bell and the Hits tab
   const { notifications, unread, refresh: refreshNotifications } = useNotifications();
@@ -234,6 +256,7 @@ export default function AppLayout() {
           user,
           refreshUser,
           openAuth: () => setAuthOpen(true),
+          openWelcome: () => setWelcomeOpen(true),
           notifications,
           refreshNotifications,
         }}
@@ -245,6 +268,16 @@ export default function AppLayout() {
         )}
         {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
         {user && !user.username && <OnboardingModal user={user} onDone={refreshUser} />}
+        {welcomeOpen && user !== undefined && !(user && !user.username) && !authOpen && (
+          <WelcomeModal
+            user={user}
+            onClose={closeWelcome}
+            onSignUp={() => {
+              closeWelcome();
+              setAuthOpen(true);
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

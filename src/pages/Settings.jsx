@@ -2,19 +2,19 @@ import React, { useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useBlocklist, handleLabel } from "@/hooks/useBlocklist";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
-import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert } from "lucide-react";
+import { LifeBuoy, Shield, Trash2, Mail, Ban, FileText, ShieldAlert, Sparkles } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@pixsup.com";
 
 const GUIDELINES = [
   "Zero tolerance for objectionable content — harassment, hate speech, threats, or explicit material is removed and accounts are terminated.",
-  "Every image is scanned by AI moderation before it reaches the grid.",
+  "Moderators review reported posts and chat messages, and remove anything that breaks these rules.",
   "Community reports are acted on swiftly — 3 independent reports auto-hide a post immediately.",
   "Report or block any user from the 3-dot menu on their post, and manage your blocks here at any time.",
 ];
 
 export default function Settings() {
-  const { user } = useOutletContext();
+  const { user, openWelcome } = useOutletContext();
   const { blocked, unblock } = useBlocklist();
   const [deleting, setDeleting] = useState(false);
 
@@ -49,6 +49,9 @@ export default function Settings() {
             <Mail className="h-3.5 w-3.5" /> Contact Support · {SUPPORT_EMAIL}
           </a>
           <div className="mt-3 flex flex-wrap gap-3 text-[11px] font-semibold text-gray-400">
+            <button onClick={openWelcome} className="flex items-center gap-1 hover:text-white">
+              <Sparkles className="h-3 w-3" /> How Pixsup works
+            </button>
             <Link to="/terms" className="flex items-center gap-1 hover:text-white">
               <FileText className="h-3 w-3" /> Terms of Service
             </Link>
