@@ -12,7 +12,7 @@ import DailyChallenge, { useTodaysChallenge } from "@/components/DailyChallenge"
 import RisingBelt from "@/components/RisingBelt";
 import PostGrid from "@/components/PostGrid";
 import PostDetail from "@/components/PostDetail";
-import { isAllTag, keywordsForTag } from "@/components/CategoryChips";
+import { sameTag, isAllTag, keywordsForTag } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 import { isSpotlit } from "@/lib/boosts";
 
@@ -81,8 +81,8 @@ export default function Home() {
     const tag = category.replace("#", "").toLowerCase();
     const inCat =
       isAllTag(category) ||
-      (p.category || "").toLowerCase() === tag ||
-      (p.hashtags || []).some((h) => h.toLowerCase() === category.toLowerCase()) ||
+      sameTag(p.category, tag) ||
+      (p.hashtags || []).some((h) => sameTag(h, category)) ||
       keywordsForTag(category).some((k) => title.includes(k));
     const inSearch = matchesSearch(p, terms, names);
     return inCat && inSearch;

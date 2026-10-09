@@ -52,26 +52,54 @@ export function categoryFor(post) {
   return `#${name}`;
 }
 
-// Top live hashtags from current posts, recalculated as content changes
-export function topHashtags(posts, limit = 7) {
+// Live hashtags for the top bar, recalculated as posts come and go. Members'
+// tags come first (up to 4), so what people are posting always shows even
+// when dozens of news stories are live; the busiest news topics fill the rest.
+// Each post counts once per tag.
+const MEMBER_TAGS = 4;
+
+// "#Cars" and "car" are the same tag
+const tagKey = (t) => {
+  const k = String(t || "").trim().replace(/^#/, "").toLowerCase();
+  return k.length > 3 && k.endsWith("s") && !k.endsWith("ss") ? k.slice(0, -1) : k;
+};
+export const sameTag = (a, b) => tagKey(a) === tagKey(b);
+const SKIP = new Set(["all", "breaking"]);
+
+function tally(posts) {
   const counts = {};
-  const bump = (raw) => {
-    const t = String(raw || "").trim();
-    const body = t.startsWith("#") ? t.slice(1) : t;
-    // "#All" is always the first chip, so never count it as a live tag too
-    if (body.length < 3 || !/^[a-z0-9]+$/i.test(body) || body.toLowerCase() === "all") return;
-    const display = body.charAt(0).toUpperCase() + body.slice(1);
-    const key = body.toLowerCase();
-    if (!counts[key]) counts[key] = { tag: `#${display}`, n: 0 };
-    counts[key].n += 1;
-  };
-  for (const p of posts || []) {
-    for (const h of p.hashtags || []) bump(h);
-    if (p.category) bump(`#${p.category}`);
+  for (const p of posts) {
+    const seen = new Set();
+    for (const raw of [...(p.hashtags || []), p.category ? `#${p.category}` : null]) {
+      const body = String(raw || "").trim().replace(/^#/, "");
+      const key = body.toLowerCase();
+      if (body.length < 2 || !/^[a-z0-9]+$/i.test(body) || SKIP.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      counts[key] ??= { tag: `#${body.charAt(0).toUpperCase()}${body.slice(1)}`, n: 0, newest: 0 };
+      counts[key].n += 1;
+      counts[key].newest = Math.max(counts[key].newest, new Date(p.created_date || 0).getTime());
+    }
   }
-  return Object.values(counts)
-    .sort((a, b) => b.n - a.n)
-    .slice(0, limit);
+  // "#Car" and "#Cars" are one tag (shown in whichever form is used more)
+  for (const key of Object.keys(counts)) {
+    const plural = counts[`${key}s`];
+    if (!plural || !counts[key]) continue;
+    const [keep, drop] = counts[key].n >= plural.n ? [key, `${key}s`] : [`${key}s`, key];
+    counts[keep] = { ...counts[keep], n: counts[keep].n + counts[drop].n, newest: Math.max(counts[keep].newest, counts[drop].newest) };
+    delete counts[drop];
+  }
+  // most posts first; ties go to the tag used most recently
+  return Object.entries(counts)
+    .sort(([, a], [, b]) => b.n - a.n || b.newest - a.newest)
+    .map(([key, v]) => ({ key, ...v }));
+}
+
+export function topHashtags(posts, limit = 7) {
+  const list = posts || [];
+  const members = tally(list.filter((p) => !p.isNews)).slice(0, MEMBER_TAGS);
+  const taken = new Set(members.map((t) => t.key));
+  const news = tally(list.filter((p) => p.isNews)).filter((t) => !taken.has(t.key));
+  return [...members, ...news].slice(0, limit).map(({ tag, n }) => ({ tag, n }));
 }
 
 export default function CategoryChips({ hashtags, active, onChange }) {
