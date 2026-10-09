@@ -48,18 +48,29 @@ const FEEDS = [
   { source: "The New York Times", topic: "Food", url: "https://rss.nytimes.com/services/xml/rss/nyt/DiningandWine.xml" },
   { source: "The Guardian", topic: "Food", url: "https://www.theguardian.com/lifeandstyle/food-and-drink/rss" },
   { source: "The New York Times", topic: "Art", url: "https://rss.nytimes.com/services/xml/rss/nyt/ArtandDesign.xml" },
+  { source: "Fox News", topic: "World", url: "https://moxie.foxnews.com/google-publisher/world.xml" },
+  { source: "Fox News", topic: "World", url: "https://moxie.foxnews.com/google-publisher/politics.xml" },
+  { source: "Fox News", topic: "Sports", url: "https://moxie.foxnews.com/google-publisher/sports.xml" },
+  { source: "Fox News", topic: "Tech", url: "https://moxie.foxnews.com/google-publisher/tech.xml" },
+  { source: "Fox News", topic: "Health", url: "https://moxie.foxnews.com/google-publisher/health.xml" },
+  { source: "Fox News", topic: "Entertainment", url: "https://moxie.foxnews.com/google-publisher/entertainment.xml" },
+  { source: "NBC News", topic: "World", url: "https://feeds.nbcnews.com/nbcnews/public/news" },
+  { source: "ABC News", topic: "World", url: "https://abcnews.go.com/abcnews/topstories" },
+  { source: "Sky News", topic: "World", url: "https://feeds.skynews.com/feeds/rss/home.xml" },
 ];
 
 const TOP_FEEDS = [
   { source: "BBC News", topic: "World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", take: 5 },
   { source: "The Guardian", topic: "World", url: "https://www.theguardian.com/world/rss", take: 4 },
   { source: "NPR", topic: "World", url: "https://feeds.npr.org/1004/rss.xml", take: 3 },
+  { source: "Fox News", topic: "World", url: "https://moxie.foxnews.com/google-publisher/latest.xml", take: 3 },
+  { source: "ABC News", topic: "World", url: "https://abcnews.go.com/abcnews/topstories", take: 2 },
 ];
 
 const NEWS_LIFETIME_MS = 6 * 60 * 60 * 1000; // a news tile lives 6 hours
 const MAX_STORY_AGE_MS = 24 * 60 * 60 * 1000; // ignore stories older than a day
 const MAX_LIVE_NEWS = 70; // never let topic news crowd out member posts
-const MAX_LIVE_TOP = 10; // World Pulse candidates alive at once
+const MAX_LIVE_TOP = 14; // World Pulse candidates alive at once
 const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
 const DELETE_AFTER_MS = 2 * 24 * 60 * 60 * 1000; // purge expired news after 2 days
@@ -117,8 +128,30 @@ function text(value: any): string {
   return "";
 }
 
+// Windows-1252 characters for bytes 0x80-0x9F (the rest map to themselves)
+const CP1252 = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008DŽ\u008F\u0090‘’“”•–—˜™š›œ\u009DžŸ";
+
+// Repairs text that was UTF-8 read as Windows-1252 ("Unitedâ€™s" → "United’s",
+// "Â£350" → "£350"). Text that isn't garbled is returned unchanged.
+function fixMojibake(s: string): string {
+  if (!/[ÂÃâ][\u0080-\u00BF€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ]/.test(s)) return s;
+  const bytes: number[] = [];
+  for (const ch of s) {
+    const code = ch.codePointAt(0)!;
+    const i = CP1252.indexOf(ch);
+    if (i >= 0) bytes.push(0x80 + i);
+    else if (code <= 0xff) bytes.push(code);
+    else return s; // a real non-Latin character: not mojibake
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(bytes));
+  } catch {
+    return s;
+  }
+}
+
 function decode(s: string): string {
-  return s
+  return fixMojibake(s)
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/&quot;/g, '"')
@@ -367,7 +400,15 @@ Deno.serve(async (req) => {
       ...newTopic.map((s) => toRow(s, expiresAt, false)),
     ];
     if (rows.length > 0) {
-      const { error: insertError } = await admin.from("posts").insert(rows);
+      // Two runs at the same moment (the schedule and a Refresh) would both see
+      // a story as new: the unique source_url index makes the second one a no-op
+      let { error: insertError } = await admin
+        .from("posts")
+        .upsert(rows, { onConflict: "source_url", ignoreDuplicates: true });
+      if (insertError?.code === "42P10") {
+        // index not created yet
+        ({ error: insertError } = await admin.from("posts").insert(rows));
+      }
       if (insertError) throw insertError;
     }
 
