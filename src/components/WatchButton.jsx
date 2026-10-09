@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Bell, BellRing } from "lucide-react";
-import { Link } from "react-router-dom";
 import { base44, supabase } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { pushEnabled } from "@/lib/push";
@@ -52,11 +51,12 @@ export default function WatchButton({ post, user, onSignIn, className = "" }) {
         const alertsOn = await pushEnabled().catch(() => false);
         toast({
           title: "🔔 Watching this post",
+          // a plain link: toasts render outside the router, where <Link> crashes
           description: alertsOn ? (
             "We'll ping you if it's about to die."
           ) : (
             <span>
-              Turn on <Link to="/settings" className="font-bold underline">phone alerts</Link> to get pinged when it's
+              Turn on <a href="/settings" className="font-bold underline">phone alerts</a> to get pinged when it's
               about to die.
             </span>
           ),
