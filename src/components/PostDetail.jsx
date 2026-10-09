@@ -139,28 +139,30 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl"
+        // Phones: photo on top, everything scrolls. Computers: big photo on the
+        // left, details and comments scrolling on the right.
+        className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl md:flex md:h-[88vh] md:max-w-6xl md:overflow-hidden"
       >
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-2 text-white transition hover:bg-black"
+          className="absolute right-3 top-3 z-30 rounded-full bg-black/60 p-2 text-white transition hover:bg-black"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative">
+        <div className="relative bg-black md:h-full md:min-w-0 md:flex-1">
           <EmojiBurst post={current} size="text-3xl" />
           {current.media_type === "video" ? (
             <video
               src={current.media_url}
               controls
               autoPlay
-              className="max-h-80 w-full bg-black object-contain"
+              className="max-h-80 w-full bg-black object-contain md:h-full md:max-h-none"
             />
           ) : (
             // The whole picture, never cropped: tall or wide photos sit on a
             // blurred copy of themselves instead of being zoomed to fill
-            <div className="relative flex h-[42vh] max-h-[440px] items-center justify-center overflow-hidden bg-black">
+            <div className="relative flex h-[42vh] max-h-[440px] items-center justify-center overflow-hidden bg-black md:h-full md:max-h-none">
               <img
                 src={current.media_url}
                 alt=""
@@ -177,7 +179,7 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           )}
         </div>
 
-        <div className="space-y-3 p-4">
+        <div className="no-scrollbar space-y-3 p-4 md:w-[400px] md:shrink-0 md:overflow-y-auto md:overscroll-contain md:border-l md:border-white/10 md:pt-14">
           <div className="flex items-center justify-between">
             <span className="rounded-full border border-cyan-800 bg-cyan-950/60 px-2.5 py-0.5 text-xs font-bold uppercase text-cyan-400">
               {cat || "Pixsup"}
