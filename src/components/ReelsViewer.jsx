@@ -121,6 +121,8 @@ function paintGlow(canvas, img) {
 
 const Reel = memo(function Reel({ post, active, near, now, author, user, voted, onHit, onReact, onComments, onSignIn, onClose }) {
   const [fan, setFan] = useState(false);
+  const [pops, setPops] = useState([]);
+  const lastTap = useRef(0);
   const glow = useRef(null);
   const rules = useGameRules();
   useEffect(() => {
@@ -149,8 +151,39 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
         <LifeBar post={post} now={now} />
       </div>
 
-      {/* The photo gets all the room between the life bar and the details */}
-      <div className="relative min-h-0 flex-1">
+      {/* The photo gets all the room between the life bar and the details.
+          Double-tap it to Hit, with a big ⚡ where you tapped. */}
+      <div
+        className="relative min-h-0 flex-1"
+        onClick={(e) => {
+          const t = Date.now();
+          if (t - lastTap.current < 320 && !dead) {
+            lastTap.current = 0;
+            const r = e.currentTarget.getBoundingClientRect();
+            const pop = { id: t, x: e.clientX - r.left, y: e.clientY - r.top };
+            setPops((p) => [...p, pop]);
+            setTimeout(() => setPops((p) => p.filter((x) => x.id !== pop.id)), 900);
+            if (!voted) onHit(post);
+          } else {
+            lastTap.current = t;
+          }
+        }}
+      >
+        <AnimatePresence>
+          {pops.map((p) => (
+            <motion.span
+              key={p.id}
+              initial={{ scale: 0.3, opacity: 0, rotate: -15 }}
+              animate={{ scale: [0.3, 1.5, 1.2], opacity: [0, 1, 1], rotate: 0 }}
+              exit={{ scale: 1.8, opacity: 0, y: -60 }}
+              transition={{ duration: 0.45 }}
+              className="pointer-events-none absolute z-30 text-[90px] leading-none drop-shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+              style={{ left: p.x - 45, top: p.y - 50 }}
+            >
+              ⚡
+            </motion.span>
+          ))}
+        </AnimatePresence>
         {/* 🔥 per hit, the emoji per reaction, 💬 per comment, from anyone, live */}
         <EmojiBurst post={post} size="text-5xl" per={4} rise={2.4} />
         {post.media_type === "video" && active ? (

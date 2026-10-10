@@ -47,6 +47,15 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
   const { user, isAuthenticated } = useAuth();
   const touch = useRef({});
   const [photoReady, setPhotoReady] = useState(false);
+  const [pops, setPops] = useState([]);
+  // double-click (or double-tap) the photo to Hit, with a big ⚡ where you clicked
+  const popHit = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const pop = { id: Date.now(), x: e.clientX - r.left, y: e.clientY - r.top };
+    setPops((p) => [...p, pop]);
+    setTimeout(() => setPops((p) => p.filter((x) => x.id !== pop.id)), 900);
+    if (!voted) vote();
+  };
   const wheel = useRef({ sum: 0, timer: null, locked: false });
   const [comments, setComments] = useState([]);
   const members = useMembers([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
@@ -411,7 +420,8 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
         {!embedded && (
         <div
           data-photo
-          className="relative touch-pan-x bg-black md:h-full md:min-w-0 md:flex-1"
+          onDoubleClick={popHit}
+          className="relative touch-pan-x select-none bg-black md:h-full md:min-w-0 md:flex-1"
           // computers: the mouse wheel or trackpad over the photo moves between
           // posts (one post per scroll gesture)
           onWheel={(e) => {
@@ -426,6 +436,21 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
           }}
         >
           <EmojiBurst post={current} size="text-3xl" />
+          <AnimatePresence>
+            {pops.map((p) => (
+              <motion.span
+                key={p.id}
+                initial={{ scale: 0.3, opacity: 0, rotate: -15 }}
+                animate={{ scale: [0.3, 1.5, 1.2], opacity: [0, 1, 1], rotate: 0 }}
+                exit={{ scale: 1.8, opacity: 0, y: -60 }}
+                transition={{ duration: 0.45 }}
+                className="pointer-events-none absolute z-30 text-[90px] leading-none drop-shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+                style={{ left: p.x - 45, top: p.y - 50 }}
+              >
+                ⚡
+              </motion.span>
+            ))}
+          </AnimatePresence>
           {inLastBreath(current, remaining) && <LastBreath remaining={remaining} big />}
           {current.media_type === "video" ? (
             <video

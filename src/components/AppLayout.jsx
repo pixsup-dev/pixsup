@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import PostCreator from "@/components/PostCreator";
 import InstallPrompt from "@/components/InstallPrompt";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import { joinPresence } from "@/lib/presence";
 import AuthModal from "@/components/AuthModal";
 import OnboardingModal from "@/components/OnboardingModal";
 import WelcomeModal, { WELCOME_SEEN_KEY } from "@/components/WelcomeModal";
@@ -124,6 +125,9 @@ export default function AppLayout() {
   // Saved posts and blocks follow the account (guest lists carry over on sign-in)
   const userId = user?.id ?? null;
   const authResolved = user !== undefined;
+  useEffect(() => {
+    if (authResolved) joinPresence(userId); // the "N here now" count
+  }, [authResolved, userId]);
   useEffect(() => {
     if (!authResolved) return;
     savedPosts.sync(userId);

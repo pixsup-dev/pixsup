@@ -7,6 +7,7 @@ import WorldPulse from "@/components/WorldPulse";
 import RescueRow from "@/components/RescueRow";
 import Graveyard from "@/components/Graveyard";
 import NewFacesRow from "@/components/NewFacesRow";
+import LiveNow from "@/components/LiveNow";
 import { matchesSearch, searchTerms } from "@/lib/search";
 import useUsernames from "@/hooks/useUsernames";
 import DailyChallenge, { useTodaysChallenge } from "@/components/DailyChallenge";
@@ -193,6 +194,10 @@ export default function Home() {
       )}
 
       <main className="mx-auto max-w-7xl px-3 pt-4 sm:px-6">
+        <LiveNow
+          posts={posts}
+          onRescue={() => document.getElementById("rescue-row")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+        />
         {(isAllTag(category) || category.toLowerCase() === challenge?.tag?.toLowerCase()) && (
           <DailyChallenge
             challenge={challenge}

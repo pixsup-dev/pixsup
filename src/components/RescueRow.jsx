@@ -34,7 +34,7 @@ export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
   };
 
   return (
-    <section className="mb-6">
+    <section id="rescue-row" className="mb-6 scroll-mt-24">
       <div className="mb-3 px-1">
         <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-red-400">
           <Siren className="h-3.5 w-3.5" /> About to die
