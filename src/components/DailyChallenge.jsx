@@ -32,11 +32,11 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
     .sort((a, b) => engagementScore(b) - engagementScore(a));
 
   return (
-    // Slim on phones (one line of prompt and a Join button); full size on computers
-    <section className="mb-5 overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-fuchsia-500/10 to-cyan-500/15 px-3 py-2.5 sm:mb-6 sm:p-4">
-      <div className="flex items-center justify-between gap-3 sm:flex-wrap">
-        <div className="min-w-0 flex-1">
-          <p className="hidden text-[11px] font-extrabold uppercase tracking-widest text-orange-300 sm:block">
+    // One slim row: the challenge, its top entries (computers) and Join
+    <section className="mb-5 overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-fuchsia-500/10 to-cyan-500/15 px-3 py-2.5 sm:mb-6 sm:px-4 sm:py-3">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1 sm:max-w-md sm:flex-none">
+          <p className="hidden text-[10px] font-extrabold uppercase tracking-widest text-orange-300 sm:block">
             📸 Today's challenge
             {challenge.sponsor && (
               <span className="ml-2 normal-case tracking-normal text-gray-300">
@@ -56,14 +56,37 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
               </span>
             )}
           </p>
-          <p className="truncate text-sm font-black leading-tight text-white sm:mt-0.5 sm:whitespace-normal sm:text-lg">
+          <p className="truncate text-sm font-black leading-tight text-white sm:text-base">
             <span className="sm:hidden">📸 </span>
             {challenge.prompt}
           </p>
-          <button onClick={onBrowse} className="mt-0.5 text-[11px] font-bold text-cyan-300 hover:underline sm:text-sm">
+          <button onClick={onBrowse} className="mt-0.5 text-[11px] font-bold text-cyan-300 hover:underline sm:text-xs">
             {challenge.tag} · {entries.length === 1 ? "1 entry" : `${entries.length} entries`} live
           </button>
         </div>
+
+        {/* Top entries, in the same row (computers only; phones tap the count) */}
+        <div className="no-scrollbar hidden min-w-0 flex-1 items-center gap-1.5 overflow-x-auto sm:flex">
+          {entries.length > 0 ? (
+            entries.slice(0, 12).map((p, i) => (
+              <button
+                key={p.id}
+                onClick={() => onOpen(p)}
+                title={p.title}
+                className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10"
+              >
+                <Image src={p.thumbnail_url || p.media_url} alt={p.title} fittingType="fill" className="h-full w-full object-cover" />
+                {i === 0 && <span className="absolute left-0.5 top-0.5 text-xs leading-none">👑</span>}
+                <span className="absolute bottom-0.5 right-0.5 rounded-full bg-black/70 px-1 text-[8px] font-bold text-yellow-300">
+                  ⚡{p.hits || 0}
+                </span>
+              </button>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400">No entries yet. Be the first, and the best one wears the crown 👑</p>
+          )}
+        </div>
+
         <button
           onClick={onJoin}
           data-tour="challenge"
@@ -72,31 +95,6 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
           <Camera className="h-4 w-4" /> Join<span className="hidden sm:inline"> the challenge</span>
         </button>
       </div>
-
-      {entries.length > 0 ? (
-        // the entries strip is for bigger screens; on phones the entry count opens them
-        <div className="no-scrollbar mt-3 hidden gap-2 overflow-x-auto sm:flex">
-          {entries.slice(0, 12).map((p, i) => (
-            <button
-              key={p.id}
-              onClick={() => onOpen(p)}
-              className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 sm:h-20 sm:w-20"
-            >
-              <Image src={p.thumbnail_url || p.media_url} alt={p.title} fittingType="fill" className="h-full w-full object-cover" />
-              {i === 0 && (
-                <span className="absolute left-1 top-1 rounded-full bg-yellow-400 px-1.5 text-[9px] font-black text-black">
-                  👑 #1
-                </span>
-              )}
-              <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 text-[9px] font-bold text-yellow-300">
-                ⚡ {p.hits || 0}
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-2 hidden text-xs text-gray-300 sm:block">No entries yet. Be the first, and the best one wears the crown 👑</p>
-      )}
     </section>
   );
 }
