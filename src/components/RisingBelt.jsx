@@ -4,7 +4,9 @@ import { Zap, ChevronLeft, ChevronRight } from "lucide-react";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
-export default function RisingBelt({ posts, onVote, onOpen }) {
+// 🚀 Almost trending: posts in the top half of the way to the 24-hour belt
+// (with trending at 10 points, posts at 5-9), so people can push them over
+export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
   const ref = useRef(null);
   const [votedIds, setVotedIds] = useState(() => new Set());
 
@@ -21,10 +23,15 @@ export default function RisingBelt({ posts, onVote, onOpen }) {
 
   return (
     <section className="mb-6">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-cyan-400">
-          <Zap className="h-3.5 w-3.5" /> Rising Fast (10–19 Pts)
-        </h2>
+      <div className="mb-3 flex items-end justify-between gap-2 px-1">
+        <div>
+          <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-cyan-400">
+            🚀 Almost trending
+          </h2>
+          <p className="mt-0.5 text-[11px] text-gray-400">
+            {from}–{to - 1} points. {to} gets them onto the 24-hour belt. Push one over!
+          </p>
+        </div>
         <div className="flex gap-1.5">
           <button
             onClick={() => scrollBy(-1)}
@@ -43,7 +50,7 @@ export default function RisingBelt({ posts, onVote, onOpen }) {
 
       {posts.length === 0 ? (
         <p className="rounded-xl border border-white/5 bg-white/5 p-3 text-xs text-gray-400">
-          Nothing rising right now — posts with 10+ hits appear here.
+          Nothing close yet. Posts with {from}+ points appear here.
         </p>
       ) : (
         <div className="relative">

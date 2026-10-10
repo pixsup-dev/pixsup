@@ -136,13 +136,17 @@ export default function Home() {
         .slice(0, 8)
     : trending.slice(0, 10);
   const beltIds = new Set(beltPosts.map((p) => p.id));
+  // 🚀 Almost trending: the top half of the way to the trending line (an
+  // admin setting), e.g. 5-9 points when trending takes 10
+  const trendAt = Number(rules.trending_points) || 20;
+  const risingFrom = Math.max(1, Math.ceil(trendAt / 2));
   const rising = filtered
     .filter(
       (p) =>
         !p.is_trending &&
         !beltIds.has(p.id) &&
-        engagementScore(p) >= 10 &&
-        engagementScore(p) < 20
+        engagementScore(p) >= risingFrom &&
+        engagementScore(p) < trendAt
     )
     .sort(byScore);
   // The Survivor: the member post the crowd has kept alive longest (past its
@@ -211,6 +215,9 @@ export default function Home() {
         {rules.show_new_faces && (
           <NewFacesRow posts={posts} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
         )}
+        {rising.length > 0 && (
+          <RisingBelt posts={rising} onVote={handleVote} onOpen={setActivePost} from={risingFrom} to={trendAt} />
+        )}
         <TrendingBelt
           posts={beltPosts}
           race={showingHot}
@@ -235,9 +242,6 @@ export default function Home() {
           onVote={handleVote}
           onOpen={setActivePost}
         />
-        {rising.length > 0 && (
-          <RisingBelt posts={rising} onVote={handleVote} onOpen={setActivePost} />
-        )}
         <PostGrid
           posts={hourlyPosts}
           loading={loading}
