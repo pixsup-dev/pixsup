@@ -190,7 +190,7 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
                   · Read <ExternalLink className="h-3 w-3" />
                 </a>
               )}
-              <button onClick={() => onComments(post)} className="flex shrink-0 items-center gap-1 text-violet-300">
+              <button onClick={() => onComments(post, "more")} className="flex shrink-0 items-center gap-1 text-violet-300">
                 · <Sparkles className="h-3 w-3" /> Explain
               </button>
             </>
@@ -395,7 +395,11 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
     [onReact]
   );
 
-  const openSheet = useCallback((p) => setSheet(p.id), []);
+  const [sheetTab, setSheetTab] = useState("comments");
+  const openSheet = useCallback((p, tab = "comments") => {
+    setSheetTab(tab);
+    setSheet(p.id);
+  }, []);
   // the page passes new functions on every render; keep the posts' copies stable
   const actions = useRef({});
   actions.current = { onClose, onSignIn };
@@ -465,17 +469,23 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
                 aria-label="Close comments"
                 className="mx-auto mt-2.5 block h-1.5 w-10 shrink-0 rounded-full bg-white/25"
               />
-              <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 pb-2.5 pt-2">
-                <p className="min-w-0 truncate text-sm font-black text-white">
-                  💬 Comments & more
-                  <span className="ml-2 font-semibold text-gray-400">{live(sheetPost).comment_count || 0}</span>
-                </p>
+              <div className="flex shrink-0 items-center justify-between px-4 pb-1 pt-1.5">
+                <p className="min-w-0 truncate text-sm font-black text-white">{sheetPost.title || "Untitled"}</p>
                 <button onClick={() => setSheet(null)} aria-label="Close" className="rounded-full p-1.5 text-gray-400 hover:bg-white/10 hover:text-white">
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <div className="min-h-0 flex-1">
-                <PostCard post={live(sheetPost)} onClose={() => setSheet(null)} onVote={onVote} onReact={onReact} onSignIn={onSignIn} embedded />
+                <PostCard
+                  key={sheetPost.id + sheetTab}
+                  post={live(sheetPost)}
+                  onClose={() => setSheet(null)}
+                  onVote={onVote}
+                  onReact={onReact}
+                  onSignIn={onSignIn}
+                  embedded
+                  startTab={sheetTab}
+                />
               </div>
             </motion.div>
           </>

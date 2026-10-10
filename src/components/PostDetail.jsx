@@ -43,7 +43,7 @@ function useIsPhone() {
 
 // One post's card. PostDetail (below) slides between these when people swipe.
 // embedded: inside Reels mode's comments panel (no photo, no close button)
-export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe, embedded = false }) {
+export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe, embedded = false, startTab = "comments" }) {
   const { user, isAuthenticated } = useAuth();
   const touch = useRef({});
   const wheel = useRef({ sum: 0, timer: null, locked: false });
@@ -57,7 +57,7 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
   const { toast } = useToast();
   const { isSaved, toggleSave } = useSavedPosts();
   const { blocked } = useBlocklist();
-  const [tab, setTab] = useState("comments");
+  const [tab, setTab] = useState(startTab);
   const [hereNow, setHereNow] = useState(0);
   const [myCommentVotes, setMyCommentVotes] = useState(() => new Set());
   const merge = (updates) => setCurrent((c) => ({ ...c, ...updates }));
@@ -164,6 +164,170 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
     : 0;
   const timer = formatRemaining(remaining);
   const cat = categoryFor(current);
+
+  // Reels mode's 💬 panel: tabs on top, the conversation in the middle, the
+  // typing box pinned to the bottom like a messaging app
+  if (embedded) {
+    const ago = (d) => {
+      const s = Math.max(0, (now - new Date(d).getTime()) / 1000);
+      return s < 60 ? "now" : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
+    };
+    const tabs = [
+      ["comments", "💬 Comments", shownComments.length || null],
+      ["live", "🔴 Live", hereNow > 1 ? `👀 ${hereNow}` : null],
+      ["more", "✨ More", null],
+    ];
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex shrink-0 gap-1 border-b border-white/10 px-3 pb-2 pt-1">
+          {tabs.map(([id, label, badge]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-extrabold transition ${
+                tab === id ? "bg-white text-black" : "text-gray-300 active:bg-white/10"
+              }`}
+            >
+              {label}
+              {badge && (
+                <span className={`rounded-full px-1.5 text-[10px] ${tab === id ? "bg-black/10" : "bg-white/10"}`}>{badge}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Always mounted so "👀 N here" counts everyone viewing the post */}
+        <div className="min-h-0 flex-1" hidden={tab !== "live"}>
+          <LiveChat post={current} user={user} onSignIn={onSignIn} onPresence={setHereNow} variant="panel" />
+        </div>
+
+        {tab === "comments" && (
+          <>
+            <div className="no-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-3">
+              {shownComments.length === 0 && (
+                <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
+                  <p className="text-3xl">💬</p>
+                  <p className="text-sm font-bold text-gray-200">No comments yet</p>
+                  <p className="text-xs text-gray-500">Be the first. Your first comment adds 10 minutes.</p>
+                </div>
+              )}
+              {shownComments.map((c) => {
+                const votedThis = myCommentVotes.has(c.id);
+                const own = c.created_by_id === user?.id;
+                const hot = c.id === hotTakeId;
+                return (
+                  <div key={c.id} className="flex items-start gap-2.5">
+                    <Avatar url={members[c.created_by_id]?.avatar_url} name={names[c.created_by_id] || "member"} size={32} />
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1.5 text-[11px]">
+                        <span className="font-bold text-gray-300">@{names[c.created_by_id] || "member"}</span>
+                        <span className="text-gray-500">{ago(c.created_date)}</span>
+                        {hot && <span className="rounded bg-orange-500 px-1 py-px text-[9px] font-black text-black">HOT TAKE</span>}
+                      </p>
+                      <p className="mt-0.5 break-words text-sm leading-snug text-gray-100">{c.text}</p>
+                    </div>
+                    <button
+                      onClick={() => voteComment(c)}
+                      disabled={own || votedThis}
+                      aria-label="Vote for this comment"
+                      className={`flex shrink-0 flex-col items-center px-1 text-[11px] font-bold ${votedThis ? "text-orange-300" : "text-gray-500"}`}
+                    >
+                      <span className={`text-base ${votedThis ? "" : "grayscale"}`}>🔥</span>
+                      {c.votes || 0}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="shrink-0 border-t border-white/10 px-3 py-2.5">
+              {isAuthenticated ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    addComment();
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Avatar url={user?.avatar_url} name={user?.username} size={30} />
+                  <input
+                    value={text}
+                    enterKeyHint="send"
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Add a comment…"
+                    className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-cyan-400 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sendingComment || !text.trim()}
+                    className="shrink-0 rounded-full bg-cyan-400 px-4 py-2 text-xs font-black text-black active:scale-95 disabled:opacity-40"
+                  >
+                    {sendingComment ? "…" : "Post"}
+                  </button>
+                </form>
+              ) : (
+                <button onClick={onSignIn} className="w-full rounded-full bg-white/10 py-2.5 text-sm font-bold text-gray-200">
+                  Sign in to comment
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {tab === "more" && (
+          <div className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3 pb-6">
+            <ExplainIt key={current.id} post={current} />
+            {current.isNews && current.source_url && (
+              <a
+                href={current.source_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-400/10 py-2 text-sm font-extrabold text-cyan-300"
+              >
+                <ExternalLink className="h-4 w-4" /> Read the full story
+                {current.guest_author_id ? ` at ${current.guest_author_id}` : ""}
+              </a>
+            )}
+            <PollCard post={current} user={user} onSignIn={onSignIn} onUpdate={merge} />
+            {user?.role === "admin" && <AdminPollEditor post={current} onUpdate={merge} />}
+            {mood && (
+              <div className="space-y-1.5 rounded-xl bg-white/5 p-3">
+                <p className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                  How people feel
+                  {rising && <span className="rounded-full bg-red-500/15 px-2 py-0.5 normal-case tracking-normal text-red-200">{rising}</span>}
+                </p>
+                <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-white/5">
+                  {mood.map((m, i) => (
+                    <div key={m.emoji} className={["bg-cyan-400", "bg-orange-400", "bg-violet-400"][i]} style={{ width: `${m.pct}%` }} />
+                  ))}
+                </div>
+                <p className="text-xs font-semibold text-gray-300">{mood.map((m) => `${m.pct}% ${m.emoji}`).join("  ·  ")}</p>
+              </div>
+            )}
+            <BoostPanel post={current} user={user} />
+            <div className="flex gap-2">
+              {remaining > 0 && (
+                <StoryCardButton
+                  post={current}
+                  className="flex-1 rounded-xl border border-fuchsia-400/40 bg-fuchsia-500/10 py-2 text-xs font-extrabold text-fuchsia-200"
+                />
+              )}
+              <button
+                onClick={() => toggleSave(current.id)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200"
+              >
+                <Bookmark className={`h-3.5 w-3.5 ${isSaved(current.id) ? "fill-cyan-400 text-cyan-400" : ""}`} />
+                {isSaved(current.id) ? "Saved" : "Save for later"}
+              </button>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs text-gray-400">
+              Something wrong with this post?
+              <PostActionMenu post={current} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
       <motion.div

@@ -10,7 +10,9 @@ const LIFETIME_MS = 10 * 60 * 1000;
 
 // A quick chat on a post. Messages vanish after 10 minutes (the server stops
 // serving them, and purges them soon after). Shows who's here right now.
-export default function LiveChat({ post, user, onSignIn, onPresence }) {
+// variant "panel": a full-height chat (Reels mode's panel) with bubbles and
+// the typing box pinned to the bottom
+export default function LiveChat({ post, user, onSignIn, onPresence, variant }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -102,6 +104,98 @@ export default function LiveChat({ post, user, onSignIn, onPresence }) {
     block(m.user_id);
     toast({ title: `Blocked @${m.username}` });
   };
+
+  if (variant === "panel") {
+    return (
+      <div className="flex h-full flex-col">
+        <div ref={listRef} className="no-scrollbar min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-4 py-3">
+          {visible.length === 0 && (
+            <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
+              <p className="text-3xl">💬</p>
+              <p className="text-sm font-bold text-gray-200">Quiet in here</p>
+              <p className="text-xs text-gray-500">Say something. Messages vanish after 10 minutes.</p>
+            </div>
+          )}
+          {visible.map((m) => {
+            const age = now - new Date(m.created_date).getTime();
+            const mine = m.user_id === user?.id;
+            const left = Math.max(1, Math.ceil((LIFETIME_MS - age) / 60000));
+            return (
+              <div
+                key={m.id}
+                className={`flex items-end gap-2 transition-opacity ${mine ? "flex-row-reverse" : ""}`}
+                style={{ opacity: age > LIFETIME_MS - 60 * 1000 ? 0.45 : 1 }}
+              >
+                {!mine && <Avatar url={members[m.user_id]?.avatar_url} name={m.username} size={28} />}
+                <div className={`max-w-[78%] ${mine ? "items-end text-right" : ""} flex flex-col`}>
+                  {!mine && <span className="mb-0.5 px-1 text-[11px] font-bold text-violet-300">@{m.username}</span>}
+                  <button
+                    type="button"
+                    onClick={() => user && !mine && setMenuFor(menuFor === m.id ? null : m.id)}
+                    className={`rounded-2xl px-3 py-2 text-left text-sm leading-snug ${
+                      mine ? "rounded-br-md bg-orange-500 text-black" : "rounded-bl-md bg-white/10 text-gray-100"
+                    }`}
+                  >
+                    {m.text}
+                  </button>
+                  <span className="mt-0.5 px-1 text-[10px] text-gray-500">vanishes in {left}m</span>
+                  {menuFor === m.id && (
+                    <div className="mt-1 flex gap-1.5">
+                      <button
+                        onClick={() => report(m)}
+                        className="flex items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-bold text-orange-300"
+                      >
+                        <Flag className="h-3 w-3" /> Report
+                      </button>
+                      <button
+                        onClick={() => blockUser(m)}
+                        className="flex items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-bold text-red-300"
+                      >
+                        <UserX className="h-3 w-3" /> Block
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="shrink-0 border-t border-white/10 px-3 py-2.5">
+          {user ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                send();
+              }}
+              className="flex items-center gap-2"
+            >
+              <Avatar url={user.avatar_url} name={user.username} size={30} />
+              <input
+                value={text}
+                maxLength={200}
+                enterKeyHint="send"
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Chat live… (vanishes in 10 min)"
+                className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-violet-400 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={sending || !text.trim()}
+                aria-label="Send"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500 text-white active:scale-90 disabled:opacity-40"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
+          ) : (
+            <button onClick={onSignIn} className="w-full rounded-full bg-white/10 py-2.5 text-sm font-bold text-gray-200">
+              Sign in to chat
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
