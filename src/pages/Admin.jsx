@@ -1,17 +1,32 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import { Flag, Loader2, ShieldAlert, EyeOff } from "lucide-react";
+import { useOutletContext, useSearchParams } from "react-router-dom";
+import { Flag, Loader2, ShieldCheck, EyeOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
 import { useToast } from "@/components/ui/use-toast";
 import ChallengeScheduler from "@/components/ChallengeScheduler";
 import AppErrors from "@/components/AppErrors";
+import AdminOverview from "@/components/admin/AdminOverview";
+import AdminTeam from "@/components/admin/AdminTeam";
+import AdminSettings from "@/components/admin/AdminSettings";
 
-// Moderation queue for admins (profiles.role = 'admin'): review reported
-// posts, keep or remove them, ban authors, and lift bans. Everything here is
-// also enforced server-side — non-admins get nothing back from these calls.
+const TABS = [
+  ["overview", "📊 Overview"],
+  ["reports", "🚩 Reports"],
+  ["challenges", "📸 Challenges"],
+  ["team", "👥 Team"],
+  ["settings", "⚙️ Settings"],
+  ["errors", "⚠️ Errors"],
+];
+
+// The admin center (profiles.role = 'admin'): overview, reports and bans,
+// challenges, the admin team, settings and errors. Everything here is also
+// enforced server-side: non-admins get nothing back from these calls.
 export default function Admin() {
   const { user } = useOutletContext();
+  const [params, setParams] = useSearchParams();
+  const tab = TABS.some(([id]) => id === params.get("tab")) ? params.get("tab") : "overview";
+  const openTab = (id) => setParams({ tab: id }, { replace: true });
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [queue, setQueue] = useState([]);
@@ -88,10 +103,40 @@ export default function Admin() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-10 pt-4">
-      <h1 className="mb-1 flex items-center gap-2 text-lg font-black text-red-400">
-        <ShieldAlert className="h-5 w-5" /> Moderation
+      <h1 className="flex items-center gap-2 text-lg font-black text-white">
+        <ShieldCheck className="h-5 w-5 text-cyan-300" /> Admin center
       </h1>
-      <p className="mb-5 text-xs text-gray-400">
+      <p className="mb-4 text-xs text-gray-400">
+        Signed in as <b className="text-gray-200">@{user.username}</b> · admin
+      </p>
+
+      <div className="no-scrollbar -mx-4 mb-5 flex gap-1.5 overflow-x-auto px-4">
+        {TABS.map(([id, label]) => {
+          const count = id === "reports" ? queue.length + new Set(chatReports.map((r) => r.message_id)).size : 0;
+          return (
+            <button
+              key={id}
+              onClick={() => openTab(id)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                tab === id ? "bg-white text-black" : "border border-white/10 bg-white/5 text-gray-300 hover:text-white"
+              }`}
+            >
+              {label}
+              {count > 0 && <span className="rounded-full bg-orange-500 px-1.5 text-[10px] font-black text-black">{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "overview" && <AdminOverview onOpen={openTab} />}
+      {tab === "challenges" && <ChallengeScheduler />}
+      {tab === "team" && <AdminTeam me={user} />}
+      {tab === "settings" && <AdminSettings />}
+      {tab === "errors" && <AppErrors />}
+
+      {tab === "reports" && (
+      <>
+      <p className="mb-3 text-xs text-gray-400">
         Reported posts, most-reported first. Posts with 3+ reporters are already hidden. App
         stores expect reports to be handled within 24 hours.
       </p>
@@ -234,10 +279,6 @@ export default function Admin() {
         </ul>
       )}
 
-      <ChallengeScheduler />
-
-      <AppErrors />
-
       <h2 className="mb-2 mt-8 text-xs font-bold uppercase tracking-widest text-red-400">Banned accounts</h2>
       {banned.length === 0 ? (
         <p className="text-xs text-gray-500">Nobody is banned.</p>
@@ -258,6 +299,8 @@ export default function Admin() {
             </li>
           ))}
         </ul>
+      )}
+      </>
       )}
     </main>
   );
