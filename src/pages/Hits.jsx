@@ -53,6 +53,7 @@ export default function Hits() {
   const [votes, setVotes] = useState([]);
   const [now, setNow] = useState(() => Date.now());
   const [active, setActive] = useState(null);
+  const [shown, setShown] = useState(8); // activity lines visible before "Show more"
 
   useEffect(() => {
     const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
@@ -130,8 +131,36 @@ export default function Hits() {
 
   const ticker = votes.filter((v) => byId.get(v.post_id)).slice(0, 8);
 
-  const earlierCut = today.length;
-  const feed = notifications;
+  // Repeats from the same person on the same post become one line ("×12"),
+  // so a burst of reactions doesn't push everything else off the screen
+  const grouped = useMemo(() => {
+    const start = moment().startOf("day").valueOf();
+    const out = [];
+    for (const n of notifications) {
+      const isToday = new Date(n.created_date).getTime() >= start;
+      const last = out[out.length - 1];
+      if (
+        last &&
+        n.type !== "trending" &&
+        last.type === n.type &&
+        last.post_id === n.post_id &&
+        last.actor_name === n.actor_name &&
+        last.isToday === isToday
+      ) {
+        last.count += 1;
+        if (n.emoji && !last.emojis.includes(n.emoji)) last.emojis.push(n.emoji);
+        if (!n.read) last.read = false;
+        continue;
+      }
+      out.push({ ...n, count: 1, emojis: n.emoji ? [n.emoji] : [], isToday });
+    }
+    return out;
+  }, [notifications]);
+  const feed = grouped.slice(0, shown);
+  const earlierCut = (() => {
+    const i = feed.findIndex((n) => !n.isToday);
+    return i === -1 ? feed.length : i;
+  })();
 
   if (loading || user === undefined) {
     return (
@@ -256,7 +285,7 @@ export default function Hits() {
                   <div className="space-y-1.5">
                     {feed.map((n, i) => {
                       const meta = NOTIF_META[n.type] || NOTIF_META.hit;
-                      const icon = n.type === "reaction" ? n.emoji || meta.icon : meta.icon;
+                      const icon = n.type === "reaction" ? n.emojis.slice(0, 3).join("") || meta.icon : meta.icon;
                       const p = byId.get(n.post_id);
                       const special = n.type === "trending" || n.type === "rescue";
                       return (
@@ -279,11 +308,12 @@ export default function Hits() {
                           >
                             <div className="relative">
                               <Thumb post={p} fallback={icon} />
-                              <span className="absolute -bottom-1 -right-1 text-base">{icon}</span>
+                              <span className="absolute -bottom-1 -right-1 whitespace-nowrap text-base">{icon}</span>
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-xs font-bold text-gray-100">
                                 {meta.solo ? meta.text : `@${n.actor_name || "someone"} ${meta.text}`}
+                                {n.count > 1 && <span className="ml-1 text-cyan-300">×{n.count}</span>}
                               </p>
                               <p className="truncate text-[10px] text-gray-400">
                                 {n.post_title || "Untitled"} · {moment(n.created_date).fromNow()}
@@ -294,6 +324,14 @@ export default function Hits() {
                         </React.Fragment>
                       );
                     })}
+                    {grouped.length > shown && (
+                      <button
+                        onClick={() => setShown((v) => v + 20)}
+                        className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-300 hover:bg-white/10"
+                      >
+                        Show more ({grouped.length - shown} older)
+                      </button>
+                    )}
                   </div>
                 )}
               </section>
