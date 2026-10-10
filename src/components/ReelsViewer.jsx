@@ -415,9 +415,55 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
   const signIn = useCallback(() => actions.current.onSignIn?.(), []);
   const sheetPost = sheet && items.find((p) => p.id === sheet);
 
+  // Swipe sideways (either way) to go back home: the post follows the finger,
+  // then slides off. Up and down stay with the native scroll between posts.
+  const shell = useRef(null);
+  const side = useRef(null);
+  const sideStart = (e) => {
+    if (sheet) return;
+    side.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null };
+  };
+  const sideMove = (e) => {
+    const g = side.current;
+    if (!g) return;
+    const dx = e.touches[0].clientX - g.x;
+    const dy = e.touches[0].clientY - g.y;
+    if (!g.dir && Math.abs(dx) + Math.abs(dy) > 12) g.dir = Math.abs(dx) > Math.abs(dy) * 1.3 ? "x" : "y";
+    if (g.dir !== "x" || !shell.current) return;
+    shell.current.style.transition = "none";
+    shell.current.style.transform = `translateX(${dx}px)`;
+    shell.current.style.opacity = String(Math.max(0.35, 1 - Math.abs(dx) / 500));
+  };
+  const sideEnd = (e) => {
+    const g = side.current;
+    side.current = null;
+    if (!g || g.dir !== "x" || !shell.current) return;
+    const dx = e.changedTouches[0].clientX - g.x;
+    const el = shell.current;
+    el.style.transition = "transform 0.22s ease-out, opacity 0.22s ease-out";
+    if (Math.abs(dx) > 90) {
+      el.style.transform = `translateX(${dx > 0 ? "" : "-"}100%)`;
+      el.style.opacity = "0";
+      setTimeout(() => actions.current.onClose?.(), 200);
+    } else {
+      el.style.transform = "translateX(0)";
+      el.style.opacity = "1";
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black">
-      <div ref={feed} onScroll={onScroll} className="no-scrollbar h-full snap-y snap-mandatory overflow-y-scroll overscroll-contain">
+    <div
+      ref={shell}
+      onTouchStart={sideStart}
+      onTouchMove={sideMove}
+      onTouchEnd={sideEnd}
+      className="fixed inset-0 z-50 bg-black"
+    >
+      <div
+        ref={feed}
+        onScroll={onScroll}
+        className="no-scrollbar h-full touch-pan-y snap-y snap-mandatory overflow-y-scroll overscroll-contain"
+      >
         {items.map((p, i) => {
           const near = Math.abs(i - idx) <= NEAR;
           return (
