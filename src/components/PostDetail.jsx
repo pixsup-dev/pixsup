@@ -25,9 +25,25 @@ import LiveChat from "@/components/LiveChat";
 import AdminPollEditor from "@/components/AdminPollEditor";
 import { useBlocklist } from "@/hooks/useBlocklist";
 import { moodSummary, reactionPalette } from "@/lib/reactions";
+import ReelsViewer from "@/components/ReelsViewer";
+
+// Phones get Reels mode; tablets and computers the side-by-side card
+const PHONE = "(max-width: 767px)";
+function useIsPhone() {
+  const [phone, setPhone] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.(PHONE).matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.(PHONE);
+    if (!mq) return;
+    const on = () => setPhone(mq.matches);
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
+  return phone;
+}
 
 // One post's card. PostDetail (below) slides between these when people swipe.
-function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }) {
+// embedded: inside Reels mode's comments panel (no photo, no close button)
+export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe, embedded = false }) {
   const { user, isAuthenticated } = useAuth();
   const touch = useRef({});
   const wheel = useRef({ sum: 0, timer: null, locked: false });
@@ -158,7 +174,11 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
         transition={dir ? { type: "tween", ease: "easeOut", duration: 0.18 } : { type: "spring", stiffness: 300, damping: 28 }}
         // Phones: photo on top, everything scrolls. Computers: big photo on the
         // left, details and comments scrolling on the right.
-        className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl md:flex md:h-[88vh] md:max-w-6xl md:overflow-hidden"
+        className={
+          embedded
+            ? "no-scrollbar relative h-full w-full overflow-y-auto overscroll-contain"
+            : "no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl md:flex md:h-[88vh] md:max-w-6xl md:overflow-hidden"
+        }
         // Phones: swipe up on the photo for the next post (down for the one
         // before), or keep scrolling past the end of the post (or back past its
         // top) from anywhere on the card, like a feed
@@ -188,6 +208,7 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
           if (dy > 0 && s.atTop) onSwipe(-1);
         }}
       >
+        {!embedded && (
         <button
           onClick={onClose}
           aria-label="Close"
@@ -195,7 +216,9 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
         >
           <X className="h-4 w-4" />
         </button>
+        )}
 
+        {!embedded && (
         <div
           data-photo
           className="relative touch-pan-x bg-black md:h-full md:min-w-0 md:flex-1"
@@ -243,6 +266,7 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
             </div>
           )}
         </div>
+        )}
 
         <div className="no-scrollbar space-y-3 p-4 md:w-[400px] md:shrink-0 md:overflow-y-auto md:overscroll-contain md:border-l md:border-white/10 md:pt-14">
           <div className="flex items-center justify-between">
@@ -502,6 +526,7 @@ const HINT_KEY = "pixsup_swipe_hint";
 // ▲/▼ buttons and the arrow keys.
 export default function PostDetail({ post, list, onNavigate, onClose, ...rest }) {
   useBodyScrollLock();
+  const phone = useIsPhone();
   const [dir, setDir] = useState(0);
   const [hint, setHint] = useState(() => {
     try {
@@ -569,6 +594,14 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
       }
     }
   }, [next, prev]);
+
+  if (phone) {
+    return (
+      <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <ReelsViewer post={post} list={list} onNavigate={onNavigate} onClose={onClose} {...rest} />
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
