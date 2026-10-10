@@ -161,18 +161,19 @@ export default function Hits() {
           {user ? (
             <>
               {/* Today */}
-              <section className="grid grid-cols-4 gap-2">
+              {/* 2×2 on phones (labels don't fit four across), one row on computers */}
+              <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
                   ["⚡", count("hit") + count("rescue"), "hits", "text-cyan-300"],
                   ["🎉", count("reaction"), "reactions", "text-orange-300"],
                   ["💬", count("comment"), "comments", "text-violet-300"],
                   ["🦸", count("rescue"), "rescues", "text-yellow-300"],
                 ].map(([icon, n, label, color]) => (
-                  <div key={label} className="rounded-2xl border border-white/5 bg-white/5 p-2.5 text-center">
-                    <p className={`text-lg font-black ${color}`}>
+                  <div key={label} className="min-w-0 rounded-2xl border border-white/5 bg-white/5 p-2.5 text-center">
+                    <p className={`text-lg font-black tabular-nums ${color}`}>
                       {icon} {n}
                     </p>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">{label} today</p>
+                    <p className="truncate text-[10px] font-bold uppercase tracking-wider text-gray-400">{label} today</p>
                   </div>
                 ))}
               </section>
