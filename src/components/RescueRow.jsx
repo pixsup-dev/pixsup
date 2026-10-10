@@ -3,6 +3,7 @@ import { Siren, Zap } from "lucide-react";
 import { Image } from "@/components/ui/image";
 import { formatRemaining } from "@/lib/time";
 import LastBreath, { inLastBreath } from "@/components/LastBreath";
+import RowArrows, { useRowScroll } from "@/components/RowArrows";
 
 const DYING_MS = 10 * 60 * 1000;
 const CRITICAL_MS = 2 * 60 * 1000;
@@ -12,6 +13,7 @@ const CRITICAL_MS = 2 * 60 * 1000;
 export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
   const [now, setNow] = useState(() => Date.now());
   const [rescuedIds, setRescuedIds] = useState(() => new Set());
+  const row = useRowScroll();
 
   useEffect(() => {
     const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
@@ -35,16 +37,19 @@ export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
 
   return (
     <section id="rescue-row" className="mb-6 scroll-mt-24">
-      <div className="mb-3 px-1">
-        <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-red-400">
-          <Siren className="h-3.5 w-3.5" /> About to die
-        </h2>
-        <p className="mt-0.5 text-[11px] text-gray-400">
-          These posts vanish in minutes. Rescue one and get the credit.
-        </p>
+      <div className="mb-3 flex items-end justify-between gap-2 px-1">
+        <div>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-red-400">
+            <Siren className="h-3.5 w-3.5" /> About to die
+          </h2>
+          <p className="mt-0.5 text-[11px] text-gray-400">
+            These posts vanish in minutes. Rescue one and get the credit.
+          </p>
+        </div>
+        <RowArrows row={row} />
       </div>
 
-      <div className="no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 py-1">
+      <div ref={row.ref} className="no-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 py-1">
         {dying.map(({ post, remaining }) => {
           const critical = remaining < CRITICAL_MS;
           const rescued = rescuedIds.has(post.id);

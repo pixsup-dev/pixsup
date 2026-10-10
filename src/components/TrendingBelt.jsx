@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Image } from "@/components/ui/image";
 import { Flame, ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import useGameRules from "@/hooks/useGameRules";
 import { engagementScore } from "@/lib/engagement";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
@@ -12,6 +13,7 @@ const TRENDING_SCORE = 20;
 // posts closest to getting in, each with its progress toward 20 points.
 export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
   const ref = useRef(null);
+  const rules = useGameRules();
   const [votedIds, setVotedIds] = useState(() => new Set());
 
   const scrollBy = (dir) =>
@@ -40,8 +42,8 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
           </h2>
           <p className="mt-0.5 text-[11px] text-gray-400">
             {race
-              ? "Nothing has made it yet. 20 points gets a post in for 24 hours. Closest so far:"
-              : "The crowd pushed these past 20 points, so they live for 24 hours."}
+              ? `Nothing has made it yet. ${rules.trending_points} points gets a post in for ${rules.trending_hours} hours. Closest so far:`
+              : `The crowd pushed these past ${rules.trending_points} points, so they live for ${rules.trending_hours} hours.`}
           </p>
         </div>
         <div className="flex shrink-0 gap-1.5">

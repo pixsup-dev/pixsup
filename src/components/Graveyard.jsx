@@ -4,6 +4,7 @@ import { base44, supabase } from "@/api/base44Client";
 import { Image } from "@/components/ui/image";
 import { useToast } from "@/components/ui/use-toast";
 import ShareButton from "@/components/ShareButton";
+import RowArrows, { useRowScroll } from "@/components/RowArrows";
 
 export const GRAVE_MS = 10 * 60 * 1000; // a dead post can be revived for 10 minutes
 
@@ -116,6 +117,7 @@ export default function Graveyard({ user, onSignIn, onRevived }) {
   const [dead, setDead] = useState([]);
   const [needed, setNeeded] = useState(3);
   const [now, setNow] = useState(() => Date.now());
+  const row = useRowScroll();
 
   const load = useCallback(async () => {
     const nowIso = new Date().toISOString();
@@ -169,13 +171,18 @@ export default function Graveyard({ user, onSignIn, onRevived }) {
 
   return (
     <section className="mb-6">
-      <h2 className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-300">
-        🪦 Graveyard
-      </h2>
-      <p className="mb-2 text-[11px] text-gray-400">
-        These just died. If {needed} people tap Revive in the next 10 minutes, it comes back. Once only.
-      </p>
-      <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
+      <div className="mb-2 flex items-end justify-between gap-2">
+        <div>
+          <h2 className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-300">
+            🪦 Graveyard
+          </h2>
+          <p className="text-[11px] text-gray-400">
+            These just died. If {needed} people tap Revive in the next 10 minutes, it comes back. Once only.
+          </p>
+        </div>
+        <RowArrows row={row} />
+      </div>
+      <div ref={row.ref} className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
         {shown.map((p) => (
           <GraveCard
             key={p.id}

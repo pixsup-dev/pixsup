@@ -4,12 +4,14 @@ import { Image } from "@/components/ui/image";
 import { formatRemaining } from "@/lib/time";
 import { useMembers } from "@/hooks/useUsernames";
 import Avatar from "@/components/Avatar";
+import RowArrows, { useRowScroll } from "@/components/RowArrows";
 
 // 🌱 New faces: the first posts of people who just joined, in their own row
 // near the top of Home, so nobody's first post dies without being seen.
 export default function NewFacesRow({ posts, user, onVote, onOpen, onSignIn }) {
   const [now, setNow] = useState(() => Date.now());
   const [hitIds, setHitIds] = useState(() => new Set());
+  const row = useRowScroll();
 
   useEffect(() => {
     const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
@@ -33,11 +35,14 @@ export default function NewFacesRow({ posts, user, onVote, onOpen, onSignIn }) {
 
   return (
     <section className="mb-6">
-      <div className="mb-3 px-1">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-green-400">🌱 New faces</h2>
-        <p className="text-[11px] text-gray-400">Their first posts on Pixsup. Give them a warm welcome 👋</p>
+      <div className="mb-3 flex items-end justify-between gap-2 px-1">
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-green-400">🌱 New faces</h2>
+          <p className="text-[11px] text-gray-400">Their first posts on Pixsup. Give them a warm welcome 👋</p>
+        </div>
+        <RowArrows row={row} />
       </div>
-      <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
+      <div ref={row.ref} className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
         {fresh.map((p) => {
           const m = members[p.created_by_id];
           const done = hitIds.has(p.id) || (user && p.created_by_id === user.id);
