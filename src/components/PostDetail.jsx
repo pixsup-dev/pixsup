@@ -29,7 +29,7 @@ import { moodSummary, reactionPalette } from "@/lib/reactions";
 // One post's card. PostDetail (below) slides between these when people swipe.
 function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }) {
   const { user, isAuthenticated } = useAuth();
-  const touch = useRef({ x: 0, y: 0 });
+  const touch = useRef({});
   const wheel = useRef({ sum: 0, timer: null, locked: false });
   const [comments, setComments] = useState([]);
   const members = useMembers([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
@@ -159,6 +159,34 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
         // Phones: photo on top, everything scrolls. Computers: big photo on the
         // left, details and comments scrolling on the right.
         className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl md:flex md:h-[88vh] md:max-w-6xl md:overflow-hidden"
+        // Phones: swipe up on the photo for the next post (down for the one
+        // before), or keep scrolling past the end of the post (or back past its
+        // top) from anywhere on the card, like a feed
+        onTouchStart={(e) => {
+          const card = e.currentTarget;
+          const from = e.target;
+          touch.current = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY,
+            onPhoto: !!from.closest?.("[data-photo]"),
+            // the live chat and inputs scroll or type on their own: leave them be
+            skip: !!from.closest?.("input, textarea") ||
+              from.closest?.(".overflow-y-auto") !== card,
+            atTop: card.scrollTop <= 2,
+            atBottom: card.scrollTop + card.clientHeight >= card.scrollHeight - 2,
+          };
+        }}
+        onTouchEnd={(e) => {
+          const t = e.changedTouches[0];
+          const s = touch.current;
+          const dx = t.clientX - s.x;
+          const dy = t.clientY - s.y;
+          if (!onSwipe || Math.abs(dy) < 70 || Math.abs(dy) < Math.abs(dx) * 1.5) return;
+          if (s.onPhoto) return onSwipe(dy < 0 ? 1 : -1);
+          if (s.skip) return;
+          if (dy < 0 && s.atBottom) onSwipe(1);
+          if (dy > 0 && s.atTop) onSwipe(-1);
+        }}
       >
         <button
           onClick={onClose}
@@ -169,17 +197,8 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
         </button>
 
         <div
+          data-photo
           className="relative touch-pan-x bg-black md:h-full md:min-w-0 md:flex-1"
-          // swipe up on the photo for the next post, down for the previous one
-          onTouchStart={(e) => {
-            touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-          }}
-          onTouchEnd={(e) => {
-            const t = e.changedTouches[0];
-            const dx = t.clientX - touch.current.x;
-            const dy = t.clientY - touch.current.y;
-            if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) onSwipe?.(dy < 0 ? 1 : -1);
-          }}
           // computers: the mouse wheel or trackpad over the photo moves between
           // posts (one post per scroll gesture)
           onWheel={(e) => {
@@ -592,7 +611,7 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
             transition={{ delay: 1 }}
             className="rounded-full bg-cyan-400 px-4 py-1.5 text-xs font-black text-black shadow-lg"
           >
-            ☝️ Swipe up on the photo for the next post
+            ☝️ Swipe up for the next post
           </motion.div>
         </div>
       )}
