@@ -23,7 +23,7 @@ export default function LiveNow({ posts, onRescue }) {
   const chip = "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold";
 
   return (
-    <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+    <div data-tour="live" className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
       <span className={`${chip} border border-white/10 bg-white/5 text-gray-200`}>
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />

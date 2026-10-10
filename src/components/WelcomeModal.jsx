@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
+import useGameRules from "@/hooks/useGameRules";
 
 export const WELCOME_SEEN_KEY = "pixsup_welcome_seen";
 
@@ -8,11 +9,37 @@ export const WELCOME_SEEN_KEY = "pixsup_welcome_seen";
 // about, with a bouncing arrow and a short card. Steps whose button isn't on
 // screen (e.g. no challenge today) are skipped. Shown once on a first visit to
 // the feed, and from Settings → "How Pixsup works" any time.
-const STEPS = [
+// In page order, top to bottom, so the tour flows down the screen. Numbers
+// come from the game rules an admin can change.
+const makeSteps = (r) => [
   {
     icon: "⏳",
     title: "Welcome to Pixsup",
     body: "Every post here is dying. Each one has a timer, and when it hits zero it's gone for good. You decide what stays alive.",
+  },
+  {
+    target: "live",
+    icon: "👀",
+    title: "Live right now",
+    body: "How many people are here, which posts are about to die and what's trending. Tap 🚨 to jump to a post that needs saving.",
+  },
+  {
+    target: "belt",
+    icon: "🔥",
+    title: "The 24-Hour Trending Belt",
+    body: `The crowd's favourites. A post that reaches ${r.trending_points} points lands here and lives for ${r.trending_hours} hours.`,
+  },
+  {
+    target: "challenge",
+    icon: "📸",
+    title: "Today's challenge",
+    body: "One photo prompt for everyone, every day. Tap Join to enter with one photo.",
+  },
+  {
+    target: "hit",
+    icon: "⚡",
+    title: "Keep it alive",
+    body: `Tap Keep alive (or double-tap a photo) for +${r.hit_minutes} minutes. An emoji adds ${r.react_minutes}, a comment ${r.comment_minutes}. Watch the life bar fill back up.`,
   },
   {
     target: "tile",
@@ -21,28 +48,10 @@ const STEPS = [
     body: "The ⏳ shows how long it has left. Tap any post to open it full screen, then swipe up for the next one.",
   },
   {
-    target: "hit",
-    icon: "⚡",
-    title: "Keep it alive",
-    body: "Tap Keep alive, or ⚡ Hit on an open post, for 5 more minutes. An emoji adds 3, your first comment 10. Watch the life bar fill back up.",
-  },
-  {
-    target: "belt",
-    icon: "🔥",
-    title: "The 24-Hour Trending Belt",
-    body: "Posts the crowd loves enough get promoted here and live for a whole day.",
-  },
-  {
-    target: "challenge",
-    icon: "📸",
-    title: "Today's challenge",
-    body: "One photo prompt for everyone, every day. Tap here to join with one photo.",
-  },
-  {
     target: "upload",
     icon: "➕",
     title: "Post your own photo",
-    body: "Tap here to post. Then share it, because it only lives while people keep it alive!",
+    body: "Tap here to post. Your first posts get extra time and a spot in 🌱 New faces. Then share them, because they only live while people keep them alive!",
   },
   {
     target: "profile",
@@ -71,7 +80,9 @@ function findTarget(name) {
 }
 
 export default function WelcomeModal({ user, onClose, onSignUp }) {
-  const steps = STEPS;
+  const rules = useGameRules();
+  // rebuilt only when the rules change, so each step keeps the same identity
+  const steps = useMemo(() => makeSteps(rules), [rules]);
   const [i, setI] = useState(0);
   const [rect, setRect] = useState(null);
   const step = steps[i];
