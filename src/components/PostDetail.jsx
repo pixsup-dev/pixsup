@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image } from "@/components/ui/image";
 import { X, Hourglass, ExternalLink, Bookmark, ChevronUp, ChevronDown } from "lucide-react";
 import { categoryFor } from "@/components/CategoryChips";
 import ShareButton from "@/components/ShareButton";
@@ -213,10 +212,13 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
                 aria-hidden
                 className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
               />
-              <Image
+              {/* The original file, which PostDetail loads ahead of time for the
+                  next and previous posts, so switching shows it at once (the
+                  resizing Image component would reload and blur-up each time) */}
+              <img
                 src={current.media_url}
                 alt={current.title}
-                fittingType="fit"
+                decoding="async"
                 className="relative h-full w-full object-contain"
               />
             </div>
@@ -538,10 +540,16 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
     return () => window.removeEventListener("keydown", onKey);
   }, [go, onClose]);
 
-  // Load the next photo early so the swipe feels instant
+  // Load the next and previous photos early so switching is instant
   useEffect(() => {
-    if (next?.media_type === "image" && next.media_url) new window.Image().src = next.media_url;
-  }, [next]);
+    for (const p of [next, prev]) {
+      if (p?.media_type === "image" && p.media_url) {
+        const img = new window.Image();
+        img.src = p.media_url;
+        img.decode?.().catch(() => {});
+      }
+    }
+  }, [next, prev]);
 
   return (
     <motion.div
