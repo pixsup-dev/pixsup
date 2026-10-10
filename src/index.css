@@ -192,3 +192,17 @@
     font-size: 16px !important;
   }
 }
+
+/* Trending Belt and Almost trending: on computers a whole number of cards
+   fills the row (the same in both rows, so they line up and nothing is cut
+   off at the edges). Phones keep fixed cards that peek at the next one. */
+@media (min-width: 640px) {
+  .belt-row { --k: 3; scroll-padding-inline: 0.25rem; }
+  .belt-card { width: calc((100% - (var(--k) - 1) * 0.75rem) / var(--k)); }
+}
+@media (min-width: 1024px) {
+  .belt-row { --k: 4; }
+}
+@media (min-width: 1280px) {
+  .belt-row { --k: 5; }
+}

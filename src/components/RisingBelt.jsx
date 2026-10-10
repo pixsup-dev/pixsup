@@ -11,7 +11,8 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
   const [votedIds, setVotedIds] = useState(() => new Set());
 
   const scrollBy = (dir) =>
-    ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: "smooth" });
+    // one full row at a time; scroll-snap lands it exactly on a card
+    ref.current?.scrollBy({ left: dir * ref.current.clientWidth, behavior: "smooth" });
 
   const vote = async (post) => {
     if (votedIds.has(post.id)) return;
@@ -56,12 +57,12 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
         <div className="relative">
           <div
             ref={ref}
-            className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
+            className="belt-row no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
           >
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28] sm:w-56"
+                className="belt-card relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28]"
               >
                 <span className="absolute left-2 top-2 z-10 rounded-full bg-cyan-400 px-1.5 py-0.5 text-[10px] font-black text-black">
                   RISING

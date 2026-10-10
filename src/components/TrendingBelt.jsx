@@ -17,7 +17,8 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
   const [votedIds, setVotedIds] = useState(() => new Set());
 
   const scrollBy = (dir) =>
-    ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: "smooth" });
+    // one full row at a time; scroll-snap lands it exactly on a card
+    ref.current?.scrollBy({ left: dir * ref.current.clientWidth, behavior: "smooth" });
 
   const vote = async (post) => {
     if (votedIds.has(post.id)) return;
@@ -70,12 +71,12 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
         <div className="relative">
           <div
             ref={ref}
-            className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
+            className="belt-row no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
           >
             {sorted.map((post) => (
               <div
                 key={post.id}
-                className={`relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border-2 sm:w-56 ${
+                className={`belt-card relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border-2 ${
                   post.isPromoted
                     ? "border-yellow-400/80 shadow-[0_0_18px_rgba(250,204,21,0.55)]"
                     : "border-white/5"
