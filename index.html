@@ -12,20 +12,42 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Pixsup" />
-    <title>Pixsup</title>
+    <title>Pixsup – photos that live only if you keep them alive</title>
     <!-- og:start (middleware.js swaps this block for per-post previews on /p/:id) -->
-    <meta name="description" content="Posts live only as long as people keep them alive. Hit it, react, keep it trending." />
+    <meta name="description" content="Pixsup is a live photo app where every post has a timer. Hit, react and comment to keep the photos and news you love alive, rescue posts before they disappear, and join today's photo challenge." />
+    <link rel="canonical" href="https://www.pixsup.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pixsup" />
-    <meta property="og:title" content="Pixsup" />
-    <meta property="og:description" content="Posts live only as long as people keep them alive. Hit it, react, keep it trending." />
+    <meta property="og:title" content="Pixsup – photos that live only if you keep them alive" />
+    <meta property="og:description" content="Every post has a timer. Hit it, react, keep it alive, or watch it disappear." />
     <meta property="og:image" content="https://www.pixsup.com/og.png" />
     <meta property="og:url" content="https://www.pixsup.com/" />
     <meta name="twitter:card" content="summary_large_image" />
     <!-- og:end -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pixsup",
+        "url": "https://www.pixsup.com/",
+        "applicationCategory": "SocialNetworkingApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "description": "A live photo app where every post has a timer. People keep the photos and news they love alive by hitting, reacting and commenting.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Shown until the app loads (and read by search engines); React replaces it -->
+    <div id="root">
+      <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;color:#9aa6b8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;text-align:center">
+        <div style="max-width:520px">
+          <h1 style="margin:0 0 12px;font-size:34px;font-weight:900;letter-spacing:-0.02em"><span style="color:#22d3ee">PIX</span><span style="color:#f97316">SUP</span></h1>
+          <p style="margin:0 0 8px;color:#f3f6fb;font-size:18px;font-weight:700">Photos that live only if you keep them alive</p>
+          <p style="margin:0;font-size:14px;line-height:1.6">Every post on Pixsup has a timer. Hit it, react and comment to give it more time, rescue posts in their last minutes, revive them from the Graveyard, and join today's photo challenge. Live news from around the world is ranked by what people keep alive.</p>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

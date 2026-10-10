@@ -1,0 +1,11 @@
+# Pixsup: everything public is welcome; account and admin pages aren't useful in search
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /settings
+Disallow: /profile
+Disallow: /hits
+Disallow: /unsubscribe
+Disallow: /reset-password
+
+Sitemap: https://www.pixsup.com/sitemap.xml

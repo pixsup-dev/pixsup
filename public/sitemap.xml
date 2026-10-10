@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Posts disappear by design, so only the lasting pages are listed -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.pixsup.com/</loc><changefreq>always</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.pixsup.com/explore</loc><changefreq>always</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.pixsup.com/register</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.pixsup.com/terms</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://www.pixsup.com/privacy</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+</urlset>
