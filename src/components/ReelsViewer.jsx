@@ -164,13 +164,16 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
             className="h-full w-full object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
           />
         )}
-        {(isBreaking(post, now) || post.revived_at || post.saved_by_name) && (
+        {(isBreaking(post, now) || post.revived_at || post.saved_by_name || post.new_face) && (
           <div className="absolute bottom-2 left-3 flex flex-wrap gap-1.5">
             {isBreaking(post, now) && (
               <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">● Breaking</span>
             )}
             {post.revived_at && (
               <span className="rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black">🧟 Revived</span>
+            )}
+            {post.new_face && !post.revived_at && (
+              <span className="rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black">🌱 New face · say hi!</span>
             )}
             {post.saved_by_name && (
               <span className="rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-yellow-300">🦸 Saved by @{post.saved_by_name}</span>

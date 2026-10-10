@@ -6,6 +6,7 @@ import TrendingBelt from "@/components/TrendingBelt";
 import WorldPulse from "@/components/WorldPulse";
 import RescueRow from "@/components/RescueRow";
 import Graveyard from "@/components/Graveyard";
+import NewFacesRow from "@/components/NewFacesRow";
 import { matchesSearch, searchTerms } from "@/lib/search";
 import useUsernames from "@/hooks/useUsernames";
 import DailyChallenge, { useTodaysChallenge } from "@/components/DailyChallenge";
@@ -164,7 +165,8 @@ export default function Home() {
   }
 
   // Swiping in an open post follows the screen: World Pulse, the belts, then the feed
-  const swipeList = [...new Map([...pulse, ...beltPosts, ...rising, ...hourlyPosts].map((p) => [p.id, p])).values()].map(
+  const newFaces = posts.filter((p) => p.new_face && !p.isNews);
+  const swipeList = [...new Map([...newFaces, ...pulse, ...beltPosts, ...rising, ...hourlyPosts].map((p) => [p.id, p])).values()].map(
     (p) => posts.find((x) => x.id === p.id) || p
   );
 
@@ -200,6 +202,7 @@ export default function Home() {
             onOpen={setActivePost}
           />
         )}
+        <NewFacesRow posts={posts} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
         <WorldPulse
           posts={pulse}
           title={pulseTitle}

@@ -5,6 +5,7 @@ import { admin } from "../_shared/supabase.ts";
 // Sends phone notifications (web push) every minute (pg_cron):
 //  - someone commented on, rescued or trended your post (from notifications)
 //  - your own post is about to die (2-5 minutes left, not trending)
+//  - 🎉 the first hit on a new member's post (🌱 New faces)
 //  - 💀 your post just died: share it so people can revive it from the Graveyard
 //  - 🔔 a post you're watching is about to die
 //  - 🛟 Rescue Radar: a post in your topics or city is dying (3 a day at most)
@@ -81,6 +82,40 @@ Deno.serve(async () => {
         url: `/p/${p.id}`,
         tag: `dying-${p.id}`,
       });
+    }
+
+    // 1b) 🎉 First hit on a 🌱 new-face post: the moment a newcomer finds out
+    // people saw them. Hit notifications aren't pushed otherwise.
+    try {
+      const { data: hitNotes } = await admin
+        .from("notifications")
+        .update({ pushed_at: nowIso })
+        .is("pushed_at", null)
+        .eq("type", "hit")
+        .gt("created_date", new Date(now.getTime() - 15 * 60 * 1000).toISOString())
+        .select("post_id, actor_name");
+      const ids = [...new Set((hitNotes || []).map((n) => n.post_id))];
+      if (ids.length) {
+        const { data: firsts, error: firstError } = await admin
+          .from("posts")
+          .update({ first_hit_alert_at: nowIso })
+          .in("id", ids)
+          .eq("new_face", true)
+          .is("first_hit_alert_at", null)
+          .select("id, title, created_by_id");
+        if (firstError) throw firstError;
+        for (const p of firsts || []) {
+          const who = hitNotes?.find((n) => n.post_id === p.id)?.actor_name;
+          queue(p.created_by_id, {
+            title: "🎉 Someone hit your post!",
+            body: `${who ? `@${who}` : "Someone"} just hit “${short(p.title)}”. Welcome to Pixsup!`,
+            url: `/p/${p.id}`,
+            tag: `firsthit-${p.id}`,
+          });
+        }
+      }
+    } catch (firstHitError) {
+      console.error("first-hit alerts skipped:", firstHitError);
     }
 
     // 2b) 💀 Members' posts that just died (Graveyard, once per post). Optional

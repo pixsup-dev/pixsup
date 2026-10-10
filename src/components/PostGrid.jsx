@@ -128,6 +128,11 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                   </span>
                 )
               )}
+              {post.new_face && !post.revived_at && !isBreaking(post, now) && (
+                <span className="absolute bottom-6 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-black">
+                  🌱 NEW
+                </span>
+              )}
               {post.revived_at && !isBreaking(post, now) && (
                 <span className="absolute bottom-6 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-black">
                   🧟 REVIVED
