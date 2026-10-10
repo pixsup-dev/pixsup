@@ -32,9 +32,10 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
     .sort((a, b) => engagementScore(b) - engagementScore(a));
 
   return (
-    <section className="mb-6 overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-fuchsia-500/10 to-cyan-500/15 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
+    // Slim on phones (one line of prompt and a Join button); full size on computers
+    <section className="mb-6 overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-fuchsia-500/10 to-cyan-500/15 p-3 sm:p-4">
+      <div className="flex items-center justify-between gap-3 sm:flex-wrap">
+        <div className="min-w-0 flex-1">
           <p className="text-[11px] font-extrabold uppercase tracking-widest text-orange-300">
             📸 Today's challenge
             {challenge.sponsor && (
@@ -55,27 +56,29 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
               </span>
             )}
           </p>
-          <p className="mt-0.5 text-lg font-black leading-tight text-white">{challenge.prompt}</p>
-          <button onClick={onBrowse} className="mt-0.5 text-sm font-bold text-cyan-300 hover:underline">
+          <p className="mt-0.5 line-clamp-2 text-[15px] font-black leading-tight text-white sm:line-clamp-none sm:text-lg">
+            {challenge.prompt}
+          </p>
+          <button onClick={onBrowse} className="mt-0.5 text-xs font-bold text-cyan-300 hover:underline sm:text-sm">
             {challenge.tag} · {entries.length === 1 ? "1 entry" : `${entries.length} entries`} live
           </button>
         </div>
         <button
           onClick={onJoin}
           data-tour="challenge"
-          className="spring-tap flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-4 py-2 text-sm font-black text-white shadow-lg active:scale-95"
+          className="spring-tap flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-3.5 py-2 text-sm font-black text-white shadow-lg active:scale-95 sm:px-4"
         >
-          <Camera className="h-4 w-4" /> Join the challenge
+          <Camera className="h-4 w-4" /> Join<span className="hidden sm:inline"> the challenge</span>
         </button>
       </div>
 
       {entries.length > 0 ? (
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+        <div className="no-scrollbar mt-2.5 flex gap-2 overflow-x-auto sm:mt-3">
           {entries.slice(0, 12).map((p, i) => (
             <button
               key={p.id}
               onClick={() => onOpen(p)}
-              className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10"
+              className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 sm:h-20 sm:w-20"
             >
               <Image src={p.thumbnail_url || p.media_url} alt={p.title} fittingType="fill" className="h-full w-full object-cover" />
               {i === 0 && (
@@ -90,7 +93,7 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
           ))}
         </div>
       ) : (
-        <p className="mt-2 text-xs text-gray-300">No entries yet. Be the first, and the best one wears the crown 👑</p>
+        <p className="mt-2 hidden text-xs text-gray-300 sm:block">No entries yet. Be the first, and the best one wears the crown 👑</p>
       )}
     </section>
   );

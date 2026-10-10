@@ -169,7 +169,7 @@ export default function Home() {
 
   // Swiping in an open post follows the screen: World Pulse, the belts, then the feed
   const newFaces = posts.filter((p) => p.new_face && !p.isNews);
-  const swipeList = [...new Map([...newFaces, ...pulse, ...beltPosts, ...rising, ...hourlyPosts].map((p) => [p.id, p])).values()].map(
+  const swipeList = [...new Map([...newFaces, ...beltPosts, ...pulse, ...rising, ...hourlyPosts].map((p) => [p.id, p])).values()].map(
     (p) => posts.find((x) => x.id === p.id) || p
   );
 
@@ -202,6 +202,21 @@ export default function Home() {
             onRescue={() => document.getElementById("rescue-row")?.scrollIntoView({ behavior: "smooth", block: "center" })}
           />
         )}
+        {/* People first: what needs saving, newcomers, the community's best,
+            then today's challenge, then the news, then the live feed */}
+        {rules.show_rescue_row && (
+          <RescueRow posts={filtered} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
+        )}
+        {rules.show_graveyard && <Graveyard user={user} onSignIn={openAuth} onRevived={loadPosts} />}
+        {rules.show_new_faces && (
+          <NewFacesRow posts={posts} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
+        )}
+        <TrendingBelt
+          posts={beltPosts}
+          race={showingHot}
+          onVote={handleVote}
+          onOpen={setActivePost}
+        />
         {(isAllTag(category) || category.toLowerCase() === challenge?.tag?.toLowerCase()) && (
           <DailyChallenge
             challenge={challenge}
@@ -211,25 +226,12 @@ export default function Home() {
             onOpen={setActivePost}
           />
         )}
-        {rules.show_new_faces && (
-          <NewFacesRow posts={posts} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
-        )}
         <WorldPulse
           posts={pulse}
           title={pulseTitle}
           topics={pulseTopics}
           topic={topic}
           onTopic={setPulseTopic}
-          onVote={handleVote}
-          onOpen={setActivePost}
-        />
-        {rules.show_rescue_row && (
-          <RescueRow posts={filtered} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
-        )}
-        {rules.show_graveyard && <Graveyard user={user} onSignIn={openAuth} onRevived={loadPosts} />}
-        <TrendingBelt
-          posts={beltPosts}
-          race={showingHot}
           onVote={handleVote}
           onOpen={setActivePost}
         />
