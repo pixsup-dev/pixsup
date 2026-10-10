@@ -26,6 +26,15 @@ const GROUPS = [
     ],
   },
   {
+    title: "🏠 Home sections",
+    items: [
+      { key: "show_live_now", type: "switch", label: "👀 Live right now line", help: "People here, posts dying, trending and new faces, at the top of Home." },
+      { key: "show_new_faces", type: "switch", label: "🌱 New faces row", help: "New members' first posts, so they get seen." },
+      { key: "show_rescue_row", type: "switch", label: "🚨 About to die row", help: "Posts with under 10 minutes left." },
+      { key: "show_graveyard", type: "switch", label: "🪦 Graveyard row", help: "Posts that just died and can still be revived." },
+    ],
+  },
+  {
     title: "⏳ Time rules",
     items: [
       { key: "post_life_minutes", type: "number", label: "New posts live for", unit: "min", help: "How long a post lives before anyone engages." },

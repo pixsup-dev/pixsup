@@ -15,6 +15,10 @@ export const DEFAULT_RULES = {
   revive_life_minutes: 30,
   revive_votes_needed: 3,
   posting_paused: false,
+  show_live_now: true,
+  show_new_faces: true,
+  show_rescue_row: true,
+  show_graveyard: true,
   announcement: "",
 };
 
