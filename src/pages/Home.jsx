@@ -163,6 +163,11 @@ export default function Home() {
     hourlyPosts = [...spotlit, ...hourlyPosts.filter((p) => !isSpotlit(p))];
   }
 
+  // Swiping in an open post follows the screen: World Pulse, the belts, then the feed
+  const swipeList = [...new Map([...pulse, ...beltPosts, ...rising, ...hourlyPosts].map((p) => [p.id, p])).values()].map(
+    (p) => posts.find((x) => x.id === p.id) || p
+  );
+
   return (
     <div
       className="touch-pan-y"
@@ -234,6 +239,8 @@ export default function Home() {
         {activePost && (
           <PostDetail
             post={posts.find((p) => p.id === activePost.id) || activePost}
+            list={swipeList}
+            onNavigate={setActivePost}
             onClose={() => setActivePost(null)}
             onVote={handleVote}
             onReact={handleReact}

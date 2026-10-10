@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Image } from "@/components/ui/image";
-import { X, Hourglass, ExternalLink, Bookmark } from "lucide-react";
+import { X, Hourglass, ExternalLink, Bookmark, ChevronUp, ChevronDown } from "lucide-react";
 import { categoryFor } from "@/components/CategoryChips";
 import ShareButton from "@/components/ShareButton";
 import PostActionMenu from "@/components/PostActionMenu";
@@ -27,9 +27,10 @@ import AdminPollEditor from "@/components/AdminPollEditor";
 import { useBlocklist } from "@/hooks/useBlocklist";
 import { moodSummary, reactionPalette } from "@/lib/reactions";
 
-export default function PostDetail({ post, onClose, onVote, onReact, onSignIn }) {
-  useBodyScrollLock();
+// One post's card. PostDetail (below) slides between these when people swipe.
+function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }) {
   const { user, isAuthenticated } = useAuth();
+  const touch = useRef({ x: 0, y: 0 });
   const [comments, setComments] = useState([]);
   const members = useMembers([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
   const names = Object.fromEntries(Object.entries(members).map(([id, m]) => [id, m.username]));
@@ -149,13 +150,11 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
   const cat = categoryFor(current);
 
   return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
-    >
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        initial={dir ? { opacity: 0, y: dir * 90 } : { opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1 } }}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
         // Phones: photo on top, everything scrolls. Computers: big photo on the
         // left, details and comments scrolling on the right.
         className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl md:flex md:h-[88vh] md:max-w-6xl md:overflow-hidden"
@@ -168,7 +167,19 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative bg-black md:h-full md:min-w-0 md:flex-1">
+        <div
+          className="relative touch-pan-x bg-black md:h-full md:min-w-0 md:flex-1"
+          // swipe up on the photo for the next post, down for the previous one
+          onTouchStart={(e) => {
+            touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          }}
+          onTouchEnd={(e) => {
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touch.current.x;
+            const dy = t.clientY - touch.current.y;
+            if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) onSwipe?.(dy < 0 ? 1 : -1);
+          }}
+        >
           <EmojiBurst post={current} size="text-3xl" />
           {inLastBreath(current, remaining) && <LastBreath remaining={remaining} big />}
           {current.media_type === "video" ? (
@@ -446,6 +457,123 @@ export default function PostDetail({ post, onClose, onVote, onReact, onSignIn })
           </div>
         </div>
       </motion.div>
+  );
+}
+
+const HINT_KEY = "pixsup_swipe_hint";
+
+// The open post. With a list (the screen it was opened from), people swipe up
+// on the photo for the next post and down for the previous one; computers get
+// ▲/▼ buttons and the arrow keys.
+export default function PostDetail({ post, list, onNavigate, onClose, ...rest }) {
+  useBodyScrollLock();
+  const [dir, setDir] = useState(0);
+  const [hint, setHint] = useState(() => {
+    try {
+      return Number(localStorage.getItem(HINT_KEY) || 0) < 3;
+    } catch {
+      return false;
+    }
+  });
+  const idx = list && onNavigate ? list.findIndex((p) => p.id === post.id) : -1;
+  const prev = idx > 0 ? list[idx - 1] : null;
+  const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
+
+  const go = useCallback(
+    (d) => {
+      const target = d > 0 ? next : prev;
+      if (!target) return;
+      setDir(d);
+      onNavigate(target);
+      if (hint) {
+        setHint(false);
+        try {
+          localStorage.setItem(HINT_KEY, "3");
+        } catch {
+          // fine
+        }
+      }
+    },
+    [next, prev, onNavigate, hint]
+  );
+
+  // Count how often the hint has been shown, so it stops after a few times
+  useEffect(() => {
+    if (!hint || !next) return;
+    try {
+      localStorage.setItem(HINT_KEY, String(Number(localStorage.getItem(HINT_KEY) || 0) + 1));
+    } catch {
+      // fine
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "")) return;
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        go(1);
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        go(-1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, onClose]);
+
+  // Load the next photo early so the swipe feels instant
+  useEffect(() => {
+    if (next?.media_type === "image" && next.media_url) new window.Image().src = next.media_url;
+  }, [next]);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <AnimatePresence mode="wait">
+        <PostCard key={post.id} post={post} onClose={onClose} {...rest} dir={dir} onSwipe={go} />
+      </AnimatePresence>
+
+      {idx >= 0 && (
+        <div className="absolute right-4 top-1/2 hidden -translate-y-1/2 flex-col gap-2 md:flex">
+          <button
+            onClick={() => go(-1)}
+            disabled={!prev}
+            aria-label="Previous post"
+            className="rounded-full border border-white/15 bg-white/10 p-2.5 text-white transition hover:bg-white/20 disabled:opacity-20"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => go(1)}
+            disabled={!next}
+            aria-label="Next post"
+            className="rounded-full border border-white/15 bg-white/10 p-2.5 text-white transition hover:bg-white/20 disabled:opacity-20"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {hint && next && (
+        // centred by the wrapper (the animation owns the pill's transform)
+        <div className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top)+2.25rem)] flex justify-center md:hidden">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+            className="rounded-full bg-cyan-400 px-4 py-1.5 text-xs font-black text-black shadow-lg"
+          >
+            ☝️ Swipe up on the photo for the next post
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

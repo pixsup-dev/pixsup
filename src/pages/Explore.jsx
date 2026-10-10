@@ -187,6 +187,8 @@ export default function Explore() {
         {activePost && (
           <PostDetail
             post={posts.find((p) => p.id === activePost.id) || activePost}
+            list={results}
+            onNavigate={setActivePost}
             onClose={() => setActivePost(null)}
             onVote={handleVote}
             onReact={handleReact}
