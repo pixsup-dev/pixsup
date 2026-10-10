@@ -614,18 +614,25 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
 
   if (phone) {
     return (
-      <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div
+        className="fixed inset-0 z-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, transition: { duration: 0.12 } }}
+        exit={{ opacity: 0, transition: { duration: 0 } }}
+      >
         <ReelsViewer post={post} list={list} onNavigate={onNavigate} onClose={onClose} {...rest} />
       </motion.div>
     );
   }
 
   return (
+    // Quick in, instant out: a slow fade blends the post's photo with the feed
+    // behind it, which reads as a flickering double image
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      animate={{ opacity: 1, transition: { duration: 0.12 } }}
+      exit={{ opacity: 0, transition: { duration: 0 } }}
     >
       <AnimatePresence initial={false}>
         <PostCard key={post.id} post={post} onClose={onClose} {...rest} dir={dir} onSwipe={go} />
