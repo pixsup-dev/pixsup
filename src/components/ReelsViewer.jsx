@@ -10,6 +10,7 @@ import WatchButton from "@/components/WatchButton";
 import { PostCard } from "@/components/PostDetail";
 import { reactionPalette } from "@/lib/reactions";
 import { isBreaking } from "@/lib/breaking";
+import EmojiBurst from "@/components/EmojiBurst";
 
 // Reels mode (phones): one post per screen, swiped like a feed. The browser's
 // own scroll-snap does the swiping, so a post follows your finger and glides
@@ -148,6 +149,8 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
 
       {/* The photo gets all the room between the life bar and the details */}
       <div className="relative min-h-0 flex-1">
+        {/* 🔥 per hit, the emoji per reaction, 💬 per comment, from anyone, live */}
+        <EmojiBurst post={post} size="text-5xl" per={4} rise={2.4} />
         {post.media_type === "video" && active ? (
           <video src={post.media_url} autoPlay muted loop playsInline className="h-full w-full object-contain" />
         ) : (

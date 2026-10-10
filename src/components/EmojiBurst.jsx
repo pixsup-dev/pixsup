@@ -9,7 +9,8 @@ let seq = 0;
 // 🔥 per hit, the emoji itself per reaction, 💬 per comment. It watches the
 // post's counters, so your own actions and other people's (via realtime)
 // both show. Nothing plays for the counts a post already had on first render.
-export default function EmojiBurst({ post, size = "text-2xl" }) {
+// per: emojis per hit/reaction (Reels mode uses more); rise: how high they go
+export default function EmojiBurst({ post, size = "text-2xl", per = 1, rise = 1 }) {
   const [floaters, setFloaters] = useState([]);
   const prev = useRef(null);
   const timers = useRef([]);
@@ -29,7 +30,7 @@ export default function EmojiBurst({ post, size = "text-2xl" }) {
 
     const spawn = [];
     const add = (emoji, n) => {
-      for (let i = 0; i < Math.min(n, MAX_PER_CHANGE); i++) spawn.push(emoji);
+      for (let i = 0; i < Math.min(n * per, MAX_PER_CHANGE * per); i++) spawn.push(emoji);
     };
     add("🔥", now.hits - before.hits);
     add("💬", now.comments - before.comments);
@@ -38,13 +39,13 @@ export default function EmojiBurst({ post, size = "text-2xl" }) {
     }
     if (!spawn.length) return;
 
-    const born = spawn.slice(0, MAX_PER_CHANGE).map((emoji, i) => ({
+    const born = spawn.slice(0, MAX_PER_CHANGE * per).map((emoji, i) => ({
       id: ++seq,
       emoji,
       x: 15 + Math.random() * 70, // % across the image
       drift: (Math.random() - 0.5) * 40,
-      delay: i * 0.12,
-      rise: 110 + Math.random() * 60,
+      delay: i * (per > 1 ? 0.06 : 0.12),
+      rise: (110 + Math.random() * 60) * rise,
     }));
     setFloaters((f) => [...f, ...born]);
     const ids = new Set(born.map((b) => b.id));
