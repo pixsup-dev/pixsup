@@ -141,7 +141,7 @@ export default function Graveyard({ user, onSignIn, onRevived }) {
     votesNeeded().then((n) => setNeeded(Number(n) || 3));
     load();
     const poll = setInterval(load, 15000);
-    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const tick = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
     return () => {
       clearInterval(poll);
       clearInterval(tick);

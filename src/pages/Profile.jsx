@@ -83,7 +83,7 @@ export default function Profile() {
   const { saved } = useSavedPosts();
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 

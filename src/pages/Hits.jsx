@@ -55,7 +55,7 @@ export default function Hits() {
   const [active, setActive] = useState(null);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 

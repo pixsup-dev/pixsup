@@ -254,13 +254,14 @@ export default function PostGrid({ posts, loading, survivorId, onOpen, onReact }
   }, [posts]);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
   // Auto-flip a random tile every 4 seconds
   useEffect(() => {
     const t = setInterval(() => {
+      if (document.documentElement.dataset.reels) return; // paused under Reels mode
       const list = postsRef.current;
       if (!list || list.length === 0) return;
       const post = list[Math.floor(Math.random() * list.length)];

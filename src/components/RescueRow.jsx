@@ -14,7 +14,7 @@ export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
   const [rescuedIds, setRescuedIds] = useState(() => new Set());
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => !document.documentElement.dataset.reels && setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
