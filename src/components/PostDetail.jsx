@@ -46,6 +46,7 @@ function useIsPhone() {
 export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe, embedded = false, startTab = "comments", onDragHandle }) {
   const { user, isAuthenticated } = useAuth();
   const touch = useRef({});
+  const [photoReady, setPhotoReady] = useState(false);
   const wheel = useRef({ sum: 0, timer: null, locked: false });
   const [comments, setComments] = useState([]);
   const members = useMembers([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
@@ -437,20 +438,29 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
             // The whole picture, never cropped: tall or wide photos sit on a
             // blurred copy of themselves instead of being zoomed to fill
             <div className="relative flex h-[42vh] max-h-[440px] items-center justify-center overflow-hidden bg-black md:h-full md:max-h-none">
+              {/* Both layers wait for the photo: a black frame, then the photo
+                  fades in, instead of the page showing through while it loads.
+                  Already loaded (e.g. next/previous): shown at once. */}
               <img
                 src={current.media_url}
                 alt=""
                 aria-hidden
-                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+                className={`absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-200 ${
+                  photoReady ? "opacity-40" : "opacity-0"
+                }`}
               />
               {/* The original file, which PostDetail loads ahead of time for the
                   next and previous posts, so switching shows it at once (the
                   resizing Image component would reload and blur-up each time) */}
               <img
+                ref={(el) => el?.complete && el.naturalWidth > 0 && !photoReady && setPhotoReady(true)}
                 src={current.media_url}
                 alt={current.title}
                 decoding="async"
-                className="relative h-full w-full object-contain"
+                onLoad={() => setPhotoReady(true)}
+                className={`relative h-full w-full object-contain transition-opacity duration-200 ${
+                  photoReady ? "opacity-100" : "opacity-0"
+                }`}
               />
             </div>
           )}
@@ -806,7 +816,7 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
       <motion.div
         className="fixed inset-0 z-50"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { duration: 0.12 } }}
+        animate={{ opacity: 1, transition: { duration: 0 } }}
         exit={{ opacity: 0, transition: { duration: 0 } }}
       >
         <ReelsViewer post={post} list={list} onNavigate={onNavigate} onClose={onClose} {...rest} />
@@ -820,7 +830,7 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { duration: 0.12 } }}
+      animate={{ opacity: 1, transition: { duration: 0 } }}
       exit={{ opacity: 0, transition: { duration: 0 } }}
     >
       <AnimatePresence initial={false}>
