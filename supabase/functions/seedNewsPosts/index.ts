@@ -74,7 +74,7 @@ const MAX_LIVE_TOP = 14; // World Pulse candidates alive at once
 const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
 const DELETE_AFTER_MS = 2 * 24 * 60 * 60 * 1000; // purge expired news after 2 days
-const SUMMARY_MAX = 280;
+const SUMMARY_MAX = 500; // enough of the article for Reels mode; the rest is a tap away
 // When the caps are full, fresh stories replace news nobody has engaged with
 // that has been up at least this long (engaged news keeps its full life)
 const RETIRE_AFTER_MS = 60 * 60 * 1000;

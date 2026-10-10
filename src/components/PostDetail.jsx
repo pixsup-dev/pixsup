@@ -43,7 +43,7 @@ function useIsPhone() {
 
 // One post's card. PostDetail (below) slides between these when people swipe.
 // embedded: inside Reels mode's comments panel (no photo, no close button)
-export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe, embedded = false, startTab = "comments" }) {
+export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe, embedded = false, startTab = "comments", onDragHandle }) {
   const { user, isAuthenticated } = useAuth();
   const touch = useRef({});
   const wheel = useRef({ sum: 0, timer: null, locked: false });
@@ -172,6 +172,16 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
       const s = Math.max(0, (now - new Date(d).getTime()) / 1000);
       return s < 60 ? "now" : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
     };
+    // swipe down on a list that's already at its top closes the panel
+    const pullStart = (e) => {
+      const el = e.currentTarget;
+      el.dataset.y = e.touches[0].clientY;
+      el.dataset.top = el.scrollTop <= 0 ? "1" : "";
+    };
+    const pullEnd = (e) => {
+      const el = e.currentTarget;
+      if (el.dataset.top && e.changedTouches[0].clientY - Number(el.dataset.y) > 90) onClose?.();
+    };
     const tabs = [
       ["comments", "💬 Comments", shownComments.length || null],
       ["live", "🔴 Live", hereNow > 1 ? `👀 ${hereNow}` : null],
@@ -179,7 +189,7 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
     ];
     return (
       <div className="flex h-full flex-col">
-        <div className="flex shrink-0 gap-1 border-b border-white/10 px-3 pb-2 pt-1">
+        <div className="flex shrink-0 touch-none gap-1 border-b border-white/10 px-3 pb-2 pt-1" onPointerDown={(e) => onDragHandle?.(e)}>
           {tabs.map(([id, label, badge]) => (
             <button
               key={id}
@@ -203,7 +213,11 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
 
         {tab === "comments" && (
           <>
-            <div className="no-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-3">
+            <div
+              onTouchStart={pullStart}
+              onTouchEnd={pullEnd}
+              className="no-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-3"
+            >
               {shownComments.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
                   <p className="text-3xl">💬</p>
@@ -274,19 +288,30 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
         )}
 
         {tab === "more" && (
-          <div className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3 pb-6">
-            <ExplainIt key={current.id} post={current} />
+          <div
+            onTouchStart={pullStart}
+            onTouchEnd={pullEnd}
+            className="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3 pb-6"
+          >
+            {current.isNews && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-cyan-300">{current.guest_author_id || "News"}</p>
+                <p className="text-lg font-black leading-snug text-white [text-wrap:balance]">{current.title}</p>
+                {current.summary && <p className="text-sm leading-relaxed text-gray-300">{current.summary}</p>}
+              </div>
+            )}
             {current.isNews && current.source_url && (
               <a
                 href={current.source_url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-400/10 py-2 text-sm font-extrabold text-cyan-300"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 py-2.5 text-sm font-black text-black"
               >
                 <ExternalLink className="h-4 w-4" /> Read the full story
                 {current.guest_author_id ? ` at ${current.guest_author_id}` : ""}
               </a>
             )}
+            <ExplainIt key={current.id} post={current} />
             <PollCard post={current} user={user} onSignIn={onSignIn} onUpdate={merge} />
             {user?.role === "admin" && <AdminPollEditor post={current} onUpdate={merge} />}
             {mood && (

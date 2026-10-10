@@ -18,13 +18,13 @@ const STEPS = [
     target: "tile",
     icon: "⏳",
     title: "Every post has a timer",
-    body: "The ⏳ shows how long it has left. Tap a post to open it. Press and hold one to react with an emoji (+3 min).",
+    body: "The ⏳ shows how long it has left. Tap any post to open it full screen, then swipe up for the next one.",
   },
   {
     target: "hit",
     icon: "⚡",
     title: "Keep it alive",
-    body: "Tap Keep alive (or HIT inside a post) to give it 5 more minutes. A comment gives 10.",
+    body: "Tap Keep alive, or ⚡ Hit on an open post, for 5 more minutes. An emoji adds 3, your first comment 10. Watch the life bar fill back up.",
   },
   {
     target: "belt",
@@ -48,7 +48,7 @@ const STEPS = [
     target: "profile",
     icon: "👤",
     title: "Your profile",
-    body: "Your stats, badges and settings. Turn on phone alerts there so you can save your posts in time.",
+    body: "Your stats, badges and settings. Turn on phone alerts there, so you hear when a post of yours is dying and can save it in time.",
   },
   {
     icon: "🚀",

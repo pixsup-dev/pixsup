@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X, Zap, MessageCircle, Share2, ExternalLink, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -202,10 +202,17 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
             </>
           ) : null}
         </div>
-        <p className="line-clamp-2 text-base font-extrabold leading-snug [text-wrap:balance]">{post.title || "Untitled"}</p>
-        {post.isNews && post.summary ? (
-          <p className="line-clamp-2 text-xs text-gray-400">{post.summary}</p>
+        {post.isNews ? (
+          // news: more of the story, and a tap opens the full details
+          <button onClick={() => onComments(post, "more")} className="block w-full space-y-1 text-left">
+            <p className="line-clamp-3 text-base font-extrabold leading-snug [text-wrap:balance]">{post.title || "Untitled"}</p>
+            {post.summary && <p className="line-clamp-4 text-[13px] leading-snug text-gray-300">{post.summary}</p>}
+            <p className="text-xs font-bold text-cyan-300">Tap for the full story ›</p>
+          </button>
         ) : (
+          <p className="line-clamp-2 text-base font-extrabold leading-snug [text-wrap:balance]">{post.title || "Untitled"}</p>
+        )}
+        {post.isNews ? null : (
           !post.isNews &&
           post.hashtags?.length > 0 && (
             <p className="truncate text-xs font-semibold text-cyan-300">{post.hashtags.slice(0, 4).join("  ")}</p>
@@ -396,6 +403,7 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
   );
 
   const [sheetTab, setSheetTab] = useState("comments");
+  const sheetDrag = useDragControls();
   const openSheet = useCallback((p, tab = "comments") => {
     setSheetTab(tab);
     setSheet(p.id);
@@ -462,18 +470,29 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "tween", ease: [0.2, 0.8, 0.2, 1], duration: 0.3 }}
+              // Pull the top bar down to close (a short flick works too)
+              drag="y"
+              dragControls={sheetDrag}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 1 }}
+              onDragEnd={(_, info) => (info.offset.y > 90 || info.velocity.y > 450) && setSheet(null)}
               className="absolute inset-x-0 bottom-0 z-50 flex h-[80%] flex-col rounded-t-3xl border-t border-white/10 bg-[#151c28] pb-[env(safe-area-inset-bottom)]"
             >
+              <div className="shrink-0 touch-none" onPointerDown={(e) => sheetDrag.start(e)}>
               <button
                 onClick={() => setSheet(null)}
                 aria-label="Close comments"
-                className="mx-auto mt-2.5 block h-1.5 w-10 shrink-0 rounded-full bg-white/25"
-              />
-              <div className="flex shrink-0 items-center justify-between px-4 pb-1 pt-1.5">
+                className="mx-auto block w-full pb-1.5 pt-2.5"
+              >
+                <span className="mx-auto block h-1.5 w-10 rounded-full bg-white/30" />
+              </button>
+              <div className="flex shrink-0 items-center justify-between px-4 pb-1 pt-0.5">
                 <p className="min-w-0 truncate text-sm font-black text-white">{sheetPost.title || "Untitled"}</p>
                 <button onClick={() => setSheet(null)} aria-label="Close" className="rounded-full p-1.5 text-gray-400 hover:bg-white/10 hover:text-white">
                   <X className="h-4 w-4" />
                 </button>
+              </div>
               </div>
               <div className="min-h-0 flex-1">
                 <PostCard
@@ -485,6 +504,7 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
                   onSignIn={onSignIn}
                   embedded
                   startTab={sheetTab}
+                  onDragHandle={(e) => sheetDrag.start(e)}
                 />
               </div>
             </motion.div>
