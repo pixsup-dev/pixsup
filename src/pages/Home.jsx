@@ -206,8 +206,17 @@ export default function Home() {
             onRescue={() => document.getElementById("rescue-row")?.scrollIntoView({ behavior: "smooth", block: "center" })}
           />
         )}
-        {/* People first: what needs saving, newcomers, the community's best,
-            then today's challenge, then the news, then the live feed */}
+        {/* The 24-hour belt always leads, then what's almost there, then what
+            needs saving and newcomers, then the challenge, the news and the feed */}
+        <TrendingBelt
+          posts={beltPosts}
+          race={showingHot}
+          onVote={handleVote}
+          onOpen={setActivePost}
+        />
+        {rising.length > 0 && (
+          <RisingBelt posts={rising} onVote={handleVote} onOpen={setActivePost} from={risingFrom} to={trendAt} />
+        )}
         {rules.show_rescue_row && (
           <RescueRow posts={filtered} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
         )}
@@ -215,15 +224,6 @@ export default function Home() {
         {rules.show_new_faces && (
           <NewFacesRow posts={posts} user={user} onVote={handleVote} onOpen={setActivePost} onSignIn={openAuth} />
         )}
-        {rising.length > 0 && (
-          <RisingBelt posts={rising} onVote={handleVote} onOpen={setActivePost} from={risingFrom} to={trendAt} />
-        )}
-        <TrendingBelt
-          posts={beltPosts}
-          race={showingHot}
-          onVote={handleVote}
-          onOpen={setActivePost}
-        />
         {(isAllTag(category) || category.toLowerCase() === challenge?.tag?.toLowerCase()) && (
           <DailyChallenge
             challenge={challenge}
