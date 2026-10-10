@@ -31,6 +31,7 @@ import { moodSummary, reactionPalette } from "@/lib/reactions";
 function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }) {
   const { user, isAuthenticated } = useAuth();
   const touch = useRef({ x: 0, y: 0 });
+  const wheel = useRef({ sum: 0, timer: null, locked: false });
   const [comments, setComments] = useState([]);
   const members = useMembers([post.created_by_id, ...comments.map((c) => c.created_by_id)]);
   const names = Object.fromEntries(Object.entries(members).map(([id, m]) => [id, m.username]));
@@ -151,10 +152,11 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
 
   return (
       <motion.div
-        initial={dir ? { opacity: 0, y: dir * 90 } : { opacity: 0, scale: 0.96 }}
+        // Opening: a gentle pop. Switching posts: a short slide with no fade, so
+        // the screen never flashes dark between posts
+        initial={dir ? { y: dir * 40 } : { opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.1 } }}
-        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        transition={dir ? { type: "tween", ease: "easeOut", duration: 0.18 } : { type: "spring", stiffness: 300, damping: 28 }}
         // Phones: photo on top, everything scrolls. Computers: big photo on the
         // left, details and comments scrolling on the right.
         className="no-scrollbar relative max-h-[90vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[#151c28] shadow-2xl md:flex md:h-[88vh] md:max-w-6xl md:overflow-hidden"
@@ -178,6 +180,18 @@ function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, onSwipe }
             const dx = t.clientX - touch.current.x;
             const dy = t.clientY - touch.current.y;
             if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) onSwipe?.(dy < 0 ? 1 : -1);
+          }}
+          // computers: the mouse wheel or trackpad over the photo moves between
+          // posts (one post per scroll gesture)
+          onWheel={(e) => {
+            if (!onSwipe || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+            wheel.current.sum += e.deltaY;
+            clearTimeout(wheel.current.timer);
+            wheel.current.timer = setTimeout(() => (wheel.current = { sum: 0, timer: null, locked: false }), 250);
+            if (!wheel.current.locked && Math.abs(wheel.current.sum) > 60) {
+              wheel.current.locked = true;
+              onSwipe(wheel.current.sum > 0 ? 1 : -1);
+            }
           }}
         >
           <EmojiBurst post={current} size="text-3xl" />
@@ -536,7 +550,7 @@ export default function PostDetail({ post, list, onNavigate, onClose, ...rest })
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         <PostCard key={post.id} post={post} onClose={onClose} {...rest} dir={dir} onSwipe={go} />
       </AnimatePresence>
 
