@@ -184,9 +184,11 @@ export default function Hits() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      {/* minmax(0, …): a wide row (your live posts) scrolls inside the column
+          instead of stretching the column past the edge of the phone */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         {/* ---------------- Left: you ---------------- */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {user ? (
             <>
               {/* Today */}
@@ -355,7 +357,7 @@ export default function Hits() {
         </div>
 
         {/* ---------------- Right: everyone ---------------- */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <section>
             <SectionTitle icon={TrendingUp} color="text-orange-400">
               Hottest this hour
