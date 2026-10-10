@@ -33,10 +33,10 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
 
   return (
     // Slim on phones (one line of prompt and a Join button); full size on computers
-    <section className="mb-6 overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-fuchsia-500/10 to-cyan-500/15 p-3 sm:p-4">
+    <section className="mb-5 overflow-hidden rounded-2xl border border-orange-400/30 bg-gradient-to-r from-orange-500/15 via-fuchsia-500/10 to-cyan-500/15 px-3 py-2.5 sm:mb-6 sm:p-4">
       <div className="flex items-center justify-between gap-3 sm:flex-wrap">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-extrabold uppercase tracking-widest text-orange-300">
+          <p className="hidden text-[11px] font-extrabold uppercase tracking-widest text-orange-300 sm:block">
             📸 Today's challenge
             {challenge.sponsor && (
               <span className="ml-2 normal-case tracking-normal text-gray-300">
@@ -56,24 +56,26 @@ export default function DailyChallenge({ challenge, posts, onJoin, onBrowse, onO
               </span>
             )}
           </p>
-          <p className="mt-0.5 line-clamp-2 text-[15px] font-black leading-tight text-white sm:line-clamp-none sm:text-lg">
+          <p className="truncate text-sm font-black leading-tight text-white sm:mt-0.5 sm:whitespace-normal sm:text-lg">
+            <span className="sm:hidden">📸 </span>
             {challenge.prompt}
           </p>
-          <button onClick={onBrowse} className="mt-0.5 text-xs font-bold text-cyan-300 hover:underline sm:text-sm">
+          <button onClick={onBrowse} className="mt-0.5 text-[11px] font-bold text-cyan-300 hover:underline sm:text-sm">
             {challenge.tag} · {entries.length === 1 ? "1 entry" : `${entries.length} entries`} live
           </button>
         </div>
         <button
           onClick={onJoin}
           data-tour="challenge"
-          className="spring-tap flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-3.5 py-2 text-sm font-black text-white shadow-lg active:scale-95 sm:px-4"
+          className="spring-tap flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-fuchsia-500 px-3 py-1.5 text-xs font-black text-white shadow-lg active:scale-95 sm:px-4 sm:py-2 sm:text-sm"
         >
           <Camera className="h-4 w-4" /> Join<span className="hidden sm:inline"> the challenge</span>
         </button>
       </div>
 
       {entries.length > 0 ? (
-        <div className="no-scrollbar mt-2.5 flex gap-2 overflow-x-auto sm:mt-3">
+        // the entries strip is for bigger screens; on phones the entry count opens them
+        <div className="no-scrollbar mt-3 hidden gap-2 overflow-x-auto sm:flex">
           {entries.slice(0, 12).map((p, i) => (
             <button
               key={p.id}
