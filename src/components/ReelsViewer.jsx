@@ -158,6 +158,48 @@ function Reel({ post, active, near, now, author, user, voted, onHit, onReact, on
         )}
       </div>
 
+      {/* Emoji bar: big, centred, each with its count; tap outside to close */}
+      <AnimatePresence>
+        {fan && (
+          <motion.div
+            key="fan"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setFan(false)}
+            className="absolute inset-0 z-30 flex items-start justify-center bg-black/60 px-4 pt-[32%]"
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.85, y: 20 }}
+              transition={{ type: "spring", stiffness: 380, damping: 26 }}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-3xl border border-white/15 bg-[#151c28]/95 px-3 py-3 shadow-2xl backdrop-blur"
+            >
+              <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                React · +3 min
+              </p>
+              <div className="flex gap-1">
+                {palette.map((e) => (
+                  <button
+                    key={e}
+                    onClick={() => {
+                      setFan(false);
+                      onReact(post, e);
+                    }}
+                    className="flex w-14 flex-col items-center gap-1 rounded-2xl py-1.5 transition active:scale-90 active:bg-white/10"
+                  >
+                    <span className="text-[32px] leading-none">{e}</span>
+                    <span className="text-[11px] font-bold tabular-nums text-gray-300">{(post.reactions || {})[e] || 0}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Actions, under your thumb */}
       <div className="absolute bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] right-2.5 z-20 flex flex-col items-center gap-3.5 text-white">
         <button
@@ -177,29 +219,6 @@ function Reel({ post, active, near, now, author, user, voted, onHit, onReact, on
         </button>
 
         <div className="relative">
-          <AnimatePresence>
-            {fan && (
-              <motion.div
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="absolute right-14 top-1 flex gap-1 rounded-full border border-white/15 bg-black/70 p-1.5 backdrop-blur"
-              >
-                {palette.map((e) => (
-                  <button
-                    key={e}
-                    onClick={() => {
-                      setFan(false);
-                      onReact(post, e);
-                    }}
-                    className="h-9 w-9 rounded-full text-xl active:scale-90"
-                  >
-                    {e}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
           <button
             onClick={() => (user ? setFan((f) => !f) : onSignIn?.())}
             disabled={dead}
@@ -410,8 +429,21 @@ export default function ReelsViewer({ post, list, onClose, onVote, onReact, onSi
               <button
                 onClick={() => setSheet(null)}
                 aria-label="Close comments"
-                className="mx-auto mb-1 mt-2.5 block h-1.5 w-10 shrink-0 rounded-full bg-white/25"
+                className="mx-auto mt-2.5 block h-1.5 w-10 shrink-0 rounded-full bg-white/25"
               />
+              <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 pb-2.5 pt-2">
+                <p className="min-w-0 truncate text-sm font-black text-white">
+                  💬 Comments & more
+                  <span className="ml-2 font-semibold text-gray-400">{live(sheetPost).comment_count || 0}</span>
+                </p>
+                <button
+                  onClick={() => setSheet(null)}
+                  aria-label="Close"
+                  className="rounded-full p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
               <div className="min-h-0 flex-1">
                 <PostCard
                   post={live(sheetPost)}

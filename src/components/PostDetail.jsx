@@ -269,6 +269,21 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
         )}
 
         <div className="no-scrollbar space-y-3 p-4 md:w-[400px] md:shrink-0 md:overflow-y-auto md:overscroll-contain md:border-l md:border-white/10 md:pt-14">
+          {/* In Reels mode the post itself already shows all of this */}
+          {embedded ? (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                aria-label="Save post"
+                onClick={() => toggleSave(current.id)}
+                className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-gray-300"
+              >
+                <Bookmark className={`h-3.5 w-3.5 ${isSaved(current.id) ? "fill-cyan-400 text-cyan-400" : ""}`} />
+                {isSaved(current.id) ? "Saved" : "Save"}
+              </button>
+              <PostActionMenu post={current} />
+            </div>
+          ) : (
+            <>
           <div className="flex items-center justify-between">
             {isBreaking(current, now) ? (
               <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-black uppercase tracking-wide text-white">
@@ -340,6 +355,8 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
           </p>
           {current.isNews && current.summary && (
             <p className="text-sm leading-relaxed text-gray-300">{current.summary}</p>
+          )}
+            </>
           )}
           <ExplainIt key={current.id} post={current} />
           {current.isNews && current.source_url && (
