@@ -11,6 +11,7 @@ import { PostCard } from "@/components/PostDetail";
 import { reactionPalette } from "@/lib/reactions";
 import { isBreaking } from "@/lib/breaking";
 import EmojiBurst from "@/components/EmojiBurst";
+import useGameRules from "@/hooks/useGameRules";
 
 // Reels mode (phones): one post per screen, swiped like a feed. The browser's
 // own scroll-snap does the swiping, so a post follows your finger and glides
@@ -121,6 +122,7 @@ function paintGlow(canvas, img) {
 const Reel = memo(function Reel({ post, active, near, now, author, user, voted, onHit, onReact, onComments, onSignIn, onClose }) {
   const [fan, setFan] = useState(false);
   const glow = useRef(null);
+  const rules = useGameRules();
   useEffect(() => {
     if (!active) setFan(false);
   }, [active]);
@@ -283,7 +285,7 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
               onClick={(e) => e.stopPropagation()}
               className="rounded-3xl border border-white/15 bg-[#151c28] px-3 py-3 shadow-2xl"
             >
-              <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-widest text-gray-400">React · +3 min</p>
+              <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-widest text-gray-400">React · +{rules.react_minutes} min</p>
               <div className="flex gap-1">
                 {palette.map((e) => (
                   <button

@@ -6,6 +6,7 @@ import TopBar from "@/components/TopBar";
 import BottomNav from "@/components/BottomNav";
 import PostCreator from "@/components/PostCreator";
 import InstallPrompt from "@/components/InstallPrompt";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import AuthModal from "@/components/AuthModal";
 import OnboardingModal from "@/components/OnboardingModal";
 import WelcomeModal, { WELCOME_SEEN_KEY } from "@/components/WelcomeModal";
@@ -247,6 +248,7 @@ export default function AppLayout() {
         refreshNotifications={refreshNotifications}
         onSignIn={() => setAuthOpen(true)}
       />
+      <AnnouncementBar />
       {user?.banned && (
         <div className="mx-auto mt-2 max-w-7xl px-3 sm:px-6">
           <p className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300">

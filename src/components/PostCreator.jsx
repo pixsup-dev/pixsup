@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { compressImage } from "@/lib/compressImage";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 import Avatar from "@/components/Avatar";
+import useGameRules from "@/hooks/useGameRules";
 
 export default function PostCreator({ challenge, onClose, onCreated }) {
   useBodyScrollLock();
@@ -24,6 +25,7 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
   const [alreadyEntered, setAlreadyEntered] = useState(false);
   const fileInputRef = useRef(null);
   const { toast } = useToast();
+  const rules = useGameRules();
 
   // Check the session when the modal opens — only members can post
   useEffect(() => {
@@ -151,10 +153,13 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
       console.error(e);
       const tooBig = /exceeded the maximum|too large|413/i.test(String(e?.message || ""));
       const slowDown = /slow down/i.test(String(e?.message || ""));
+      const paused = /paused/i.test(String(e?.message || ""));
       toast({
         title: "Upload failed",
-        description: slowDown
-          ? "You can post up to 10 times an hour. Try again a little later."
+        description: paused
+          ? "Posting is paused for a few minutes. Please try again soon."
+          : slowDown
+          ? e.message.replace(/^.*?Slow down: /, "").replace(/^./, (c) => c.toUpperCase())
           : tooBig
           ? "That file is too big — the limit is 50 MB."
           : "Something went wrong — please try again.",
@@ -316,9 +321,9 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
           </p>
         )}
         <p className="text-center text-[10px] text-gray-400">
-          Every photo is AI-scanned, titled and tagged before publishing · Posts live 1
-          hour · Other people keep them alive: each person's Hit adds +5 minutes, their
-          first emoji +3 and their first comment +10
+          Every photo is AI-scanned, titled and tagged before publishing · Posts live{" "}
+          {rules.post_life_minutes} minutes · Other people keep them alive: each Hit adds +
+          {rules.hit_minutes} min, an emoji +{rules.react_minutes} and a comment +{rules.comment_minutes}
         </p>
       </motion.div>
     </motion.div>
