@@ -11,6 +11,7 @@ export const DEFAULT_RULES = {
   comment_minutes: 10,
   trending_points: 20,
   trending_hours: 24,
+  rescue_minutes: 60,
   revive_window_minutes: 10,
   revive_life_minutes: 30,
   revive_votes_needed: 3,

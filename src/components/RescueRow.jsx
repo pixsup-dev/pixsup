@@ -4,14 +4,19 @@ import { Image } from "@/components/ui/image";
 import { formatRemaining } from "@/lib/time";
 import LastBreath, { inLastBreath } from "@/components/LastBreath";
 import RowArrows, { useRowScroll } from "@/components/RowArrows";
+import useGameRules from "@/hooks/useGameRules";
+
+const hoursLabel = (m) => (m % 60 === 0 ? (m === 60 ? "a full hour" : `${m / 60} hours`) : `${m} minutes`);
 
 const DYING_MS = 10 * 60 * 1000;
 const CRITICAL_MS = 2 * 60 * 1000;
 
 // "About to die": posts with under 10 minutes left, soonest first. One tap
-// rescues them; a save in the last 5 minutes earns "Saved by @you".
+// rescues them: the timer goes back to a full hour (Admin setting) and the
+// post shows "Saved by @you".
 export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
   const [now, setNow] = useState(() => Date.now());
+  const rules = useGameRules();
   const [rescuedIds, setRescuedIds] = useState(() => new Set());
   const row = useRowScroll();
 
@@ -43,7 +48,7 @@ export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
             <Siren className="h-3.5 w-3.5" /> About to die
           </h2>
           <p className="mt-0.5 text-[11px] text-gray-400">
-            These posts vanish in minutes. Rescue one and get the credit.
+            These vanish in minutes. Save one and it gets {hoursLabel(rules.rescue_minutes)} back, with your name on it.
           </p>
         </div>
         <RowArrows row={row} />

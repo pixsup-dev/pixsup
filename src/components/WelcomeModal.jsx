@@ -39,7 +39,7 @@ const makeSteps = (r) => [
     target: "hit",
     icon: "⚡",
     title: "Keep it alive",
-    body: `Tap Keep alive (or double-tap a photo) for +${r.hit_minutes} minutes. An emoji adds ${r.react_minutes}, a comment ${r.comment_minutes}. Watch the life bar fill back up.`,
+    body: `Tap Keep alive (or double-tap a photo) for +${r.hit_minutes} minutes. An emoji adds ${r.react_minutes}, a comment ${r.comment_minutes}. Save someone's dying post and it goes back to ${r.rescue_minutes} minutes.`,
   },
   {
     target: "tile",

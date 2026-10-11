@@ -41,6 +41,7 @@ const GROUPS = [
       { key: "hit_minutes", type: "number", label: "Each ⚡ Hit adds", unit: "min" },
       { key: "react_minutes", type: "number", label: "Each emoji adds", unit: "min" },
       { key: "comment_minutes", type: "number", label: "A comment adds", unit: "min" },
+      { key: "rescue_minutes", type: "number", label: "🚨 A save puts it back to", unit: "min", help: "Hitting someone else's post in its last 10 minutes resets its timer to this." },
     ],
   },
   {
