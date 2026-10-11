@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Compass, Search, TrendingUp, X } from "lucide-react";
 import TopicCard from "@/components/explore/TopicCard";
@@ -17,6 +17,7 @@ const byScore = (a, b) => engagementScore(b) - engagementScore(a) || time(b.crea
 
 const SORTS = [
   { id: "hot", label: "🔥 Hottest", filter: () => true, sort: byScore },
+  { id: "trending", label: "🏆 Trending", filter: (p) => p.is_trending, sort: byScore },
   { id: "dying", label: "⏳ Dying soon", filter: (p) => !p.is_trending, sort: (a, b) => time(a.expires_at) - time(b.expires_at) },
   { id: "new", label: "✨ Newest", filter: () => true, sort: (a, b) => time(b.created_date) - time(a.created_date) },
   { id: "community", label: "👥 Community", filter: (p) => !p.isNews, sort: byScore },
@@ -37,7 +38,15 @@ export default function Explore() {
   const myCity = (user?.city || "").toLowerCase();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
-  const [sortId, setSortId] = useState("hot");
+  // ?sort=trending (from the belt's "See all") opens that tab
+  const [params] = useSearchParams();
+  const [sortId, setSortId] = useState(() =>
+    SORTS.some((s) => s.id === params.get("sort")) ? params.get("sort") : "hot"
+  );
+  useEffect(() => {
+    const s = params.get("sort");
+    if (SORTS.some((x) => x.id === s)) setSortId(s);
+  }, [params]);
   // more tiles load as you scroll; back to the first page on a new sort or search
   const [visible, moreRef, showMore] = useInfiniteCount(PAGE, `${sortId}|${q}`);
   const [now, setNow] = useState(() => Date.now());

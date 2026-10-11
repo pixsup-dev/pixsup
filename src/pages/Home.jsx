@@ -134,7 +134,7 @@ export default function Home() {
         .filter((p) => engagementScore(p) > 0 && !pulseIds.has(p.id))
         .sort(byScore)
         .slice(0, 8)
-    : trending.slice(0, 10);
+    : trending.slice(0, 20); // the rest: "See all" in Explore, and in the feed below
   const beltIds = new Set(beltPosts.map((p) => p.id));
   // 🚀 Almost trending: the top half of the way to the trending line (an
   // admin setting), e.g. 5-9 points when trending takes 10
@@ -160,7 +160,9 @@ export default function Home() {
         Date.now() - new Date(p.created_date).getTime() > 60 * 60 * 1000
     )
     .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))[0];
-  let hourlyPosts = filtered.filter((p) => !p.is_trending);
+  // Everything not already in the belt, so a trending post past the belt's
+  // top 20 still shows up (it used to vanish from Home)
+  let hourlyPosts = filtered.filter((p) => !beltIds.has(p.id));
   if (survivor) {
     hourlyPosts.splice(hourlyPosts.indexOf(survivor), 1);
     hourlyPosts.unshift(survivor);
@@ -210,6 +212,7 @@ export default function Home() {
             needs saving and newcomers, then the challenge, the news and the feed */}
         <TrendingBelt
           posts={beltPosts}
+          total={trending.length}
           race={showingHot}
           onVote={handleVote}
           onOpen={setActivePost}

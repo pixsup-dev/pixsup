@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Image } from "@/components/ui/image";
 import { Flame, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import useGameRules from "@/hooks/useGameRules";
@@ -7,11 +8,12 @@ import { engagementScore } from "@/lib/engagement";
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
 // Score a post needs to make the belt (matches the server's promotion rule)
-const TRENDING_SCORE = 20;
 
 // The 24-Hour Trending Belt. Until something has trended (race), it shows the
 // posts closest to getting in, each with its progress toward 20 points.
-export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
+// total: how many posts are trending in all (the belt shows the top ones;
+// "See all" opens every one of them in Explore)
+export default function TrendingBelt({ posts, onVote, onOpen, race = false, total = 0 }) {
   const ref = useRef(null);
   const rules = useGameRules();
   const [votedIds, setVotedIds] = useState(() => new Set());
@@ -28,6 +30,8 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
     }
   };
 
+  const TRENDING_SCORE = Number(rules.trending_points) || 20;
+  const more = !race && total > (posts || []).length;
   const sorted = [...(posts || [])].sort(
     (a, b) =>
       (b.isPromoted ? 1 : 0) - (a.isPromoted ? 1 : 0) ||
@@ -40,6 +44,11 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
         <div>
           <h2 className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-orange-400">
             <Flame className="h-3.5 w-3.5" /> 24-Hour Trending Belt
+            {!race && total > 0 && (
+              <Link to="/explore?sort=trending" className="ml-1 normal-case tracking-normal text-orange-200 hover:underline">
+                · See all {total} ›
+              </Link>
+            )}
           </h2>
           <p className="mt-0.5 text-[11px] text-gray-400">
             {race
@@ -132,6 +141,16 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false }) {
                 </div>
               </div>
             ))}
+            {more && (
+              <Link
+                to="/explore?sort=trending"
+                className="belt-card flex w-44 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-orange-400/40 bg-orange-500/5 p-4 text-center transition hover:bg-orange-500/10"
+              >
+                <Flame className="h-8 w-8 text-orange-400" />
+                <span className="text-sm font-black text-white">See all {total} trending</span>
+                <span className="text-[11px] text-gray-400">Every post on the 24-hour belt, in Explore</span>
+              </Link>
+            )}
           </div>
           <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#0b0f17] to-transparent" />
           <div className="pointer-events-none absolute left-0 top-0 h-full w-4 bg-gradient-to-r from-[#0b0f17] to-transparent" />
