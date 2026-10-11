@@ -207,7 +207,7 @@ export default function WorldPulse({
       )}
 
       {/* Phones: one swipeable row. Wider screens: two rows that scroll together. */}
-      <div ref={scroller} className="no-scrollbar snap-x snap-mandatory overflow-x-auto px-1 py-1">
+      <motion.div layoutScroll ref={scroller} className="no-scrollbar snap-x snap-mandatory overflow-x-auto px-1 py-1">
         <div
           className="hidden flex-col gap-3 [--fit:2] [--k:min(var(--fit),max(var(--cols),3))] sm:flex lg:[--fit:3] xl:[--fit:4]"
           style={{ "--cols": columns }}
@@ -221,7 +221,7 @@ export default function WorldPulse({
         <div className="flex w-max gap-3 sm:hidden">
           {posts.map((post, i) => renderCard(post, i))}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

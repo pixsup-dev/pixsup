@@ -60,7 +60,8 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
         </p>
       ) : (
         <div className="relative">
-          <div
+          <motion.div
+            layoutScroll
             ref={ref}
             className="belt-row no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
           >
@@ -105,7 +106,7 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
                 <ClimbBadge places={climbs[post.id]} className="bottom-12 left-2" />
               </motion.div>
             ))}
-          </div>
+          </motion.div>
           <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#0b0f17] to-transparent" />
           <div className="pointer-events-none absolute left-0 top-0 h-full w-4 bg-gradient-to-r from-[#0b0f17] to-transparent" />
         </div>
