@@ -13,8 +13,13 @@ const IGNORE = [
 ];
 const sent = new Set();
 
+// Only the real site reports: test copies (localhost, previews) would send
+// false alarms to the error email
+const isTestCopy = () => /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+
 export function reportError(error, where = "") {
   try {
+    if (isTestCopy()) return;
     const message = `${where ? `[${where}] ` : ""}${error?.message || String(error || "Unknown error")}`.slice(0, 300);
     const stack = String(error?.stack || "").slice(0, 2000);
     if (IGNORE.some((re) => re.test(message) || re.test(stack))) return;
