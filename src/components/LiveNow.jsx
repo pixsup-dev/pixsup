@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { onPresence } from "@/lib/presence";
+import useGameRules from "@/hooks/useGameRules";
 
 // The first thing on Home: proof the place is alive right now. Tapping
 // "dying" jumps to the posts that need saving.
 export default function LiveNow({ posts, onRescue }) {
   const [here, setHere] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const rules = useGameRules();
 
   useEffect(() => onPresence(setHere), []);
   useEffect(() => {
@@ -15,7 +17,7 @@ export default function LiveNow({ posts, onRescue }) {
 
   const dying = posts.filter((p) => {
     const left = new Date(p.expires_at).getTime() - now;
-    return !p.is_trending && left > 0 && left < 10 * 60 * 1000;
+    return (!p.is_trending || rules.trending_saves) && left > 0 && left < 10 * 60 * 1000;
   }).length;
   const trending = posts.filter((p) => p.is_trending).length;
   const fresh = posts.filter((p) => p.new_face && !p.isNews).length;

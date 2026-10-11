@@ -27,7 +27,7 @@ export default function RescueRow({ posts, user, onVote, onOpen, onSignIn }) {
 
   const dying = posts
     .map((p) => ({ post: p, remaining: new Date(p.expires_at).getTime() - now }))
-    .filter(({ post, remaining }) => !post.is_trending && remaining > 0 && remaining < DYING_MS)
+    .filter(({ post, remaining }) => (!post.is_trending || rules.trending_saves) && remaining > 0 && remaining < DYING_MS)
     .sort((a, b) => a.remaining - b.remaining)
     .slice(0, 8);
 

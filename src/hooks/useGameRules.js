@@ -20,6 +20,7 @@ export const DEFAULT_RULES = {
   show_new_faces: true,
   show_rescue_row: true,
   show_graveyard: true,
+  trending_saves: true,
   announcement: "",
 };
 

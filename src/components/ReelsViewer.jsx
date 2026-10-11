@@ -45,6 +45,7 @@ function LifeBar({ post, now }) {
   const dead = left <= 0;
   const urgent = !dead && left <= 5 * 60 * 1000;
   const lastBreath = !dead && left <= 60 * 1000;
+  const urgentTrend = post.is_trending && !dead && left <= 10 * 60 * 1000;
   const expires = post.expires_at ? new Date(post.expires_at).getTime() : 0;
   const [gain, setGain] = useState(null);
   const prev = useRef(expires);
@@ -72,7 +73,9 @@ function LifeBar({ post, now }) {
   const label = dead
     ? "💀 Died"
     : post.is_trending
-      ? `🔥 Trending · ${clock(left)} left`
+      ? urgentTrend
+        ? `🚨 ${clock(left)} left on the belt · hit to save it!`
+        : `🔥 Trending · ${clock(left)} left`
       : lastBreath
         ? `🚨 ${clock(left)} left · hit to save it!`
         : urgent
