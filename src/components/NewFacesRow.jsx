@@ -18,9 +18,14 @@ export default function NewFacesRow({ posts, user, onVote, onOpen, onSignIn }) {
     return () => clearInterval(t);
   }, []);
 
+  // One card per person (their newest), so a newcomer who posts three times
+  // doesn't crowd out the others. Their other first posts still have the
+  // bonus time and are in the feed below.
+  const seen = new Set();
   const fresh = posts
     .filter((p) => p.new_face && !p.isNews && new Date(p.expires_at).getTime() > now)
     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+    .filter((p) => !seen.has(p.created_by_id) && seen.add(p.created_by_id))
     .slice(0, 12);
   const members = useMembers(fresh.map((p) => p.created_by_id));
 
