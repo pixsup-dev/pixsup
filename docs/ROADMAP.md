@@ -20,6 +20,7 @@ Last updated: October 10, 2026.
 | Each Hit adds | 10 min | |
 | Each emoji adds | 5 min | |
 | A comment adds | 15 min | |
+| A save puts it back to | 60 min | A hit on someone else's post in its last 10 minutes |
 | Points to trend | 10 | Raise as more people join |
 
 As more people use Pixsup, tighten the times back toward 60 / 5 / 3 / 10. Short timers feel exciting when lots of people are online.
