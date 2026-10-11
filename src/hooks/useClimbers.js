@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 // Watches a ranked row (ids in display order) and reports posts that just
 // moved up, as { [id]: places climbed }. Each climb shows for a few seconds.
-const SHOW_MS = 2500;
+const SHOW_MS = 4000;
 
 export default function useClimbers(ids) {
   const prev = useRef(null);

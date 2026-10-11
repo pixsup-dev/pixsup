@@ -190,7 +190,7 @@ export default function AppLayout() {
       // notifies the owner, atomically on the server; null = already hit
       const updated = await base44.rpc("hit_post", { p_post_id: post.id });
       if (!updated) return false;
-      return {
+      const updates = {
         hits: updated.hits,
         expires_at: updated.expires_at,
         is_trending: updated.is_trending,
@@ -198,6 +198,10 @@ export default function AppLayout() {
         saved_by_name: updated.saved_by_name,
         saved_at: updated.saved_at,
       };
+      // Show it now (rows re-rank and the post glides up) instead of waiting
+      // for the live update to come back
+      setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, ...updates } : p)));
+      return updates;
     } catch (e) {
       console.error(e);
       return false;
@@ -217,7 +221,9 @@ export default function AppLayout() {
     }
     try {
       const updated = await base44.rpc("react_to_post", { p_post_id: post.id, p_emoji: emoji });
-      return { reactions: updated.reactions, expires_at: updated.expires_at };
+      const updates = { reactions: updated.reactions, expires_at: updated.expires_at };
+      setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, ...updates } : p)));
+      return updates;
     } catch (e) {
       console.error(e);
       return null;
