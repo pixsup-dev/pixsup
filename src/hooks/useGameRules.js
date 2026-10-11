@@ -13,7 +13,7 @@ export const DEFAULT_RULES = {
   trending_hours: 24,
   rescue_minutes: 60,
   revive_window_minutes: 10,
-  revive_life_minutes: 30,
+  revive_life_minutes: 60,
   revive_votes_needed: 3,
   posting_paused: false,
   show_live_now: true,

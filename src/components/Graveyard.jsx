@@ -5,6 +5,7 @@ import { Image } from "@/components/ui/image";
 import { useToast } from "@/components/ui/use-toast";
 import ShareButton from "@/components/ShareButton";
 import RowArrows, { useRowScroll } from "@/components/RowArrows";
+import useGameRules from "@/hooks/useGameRules";
 
 export const GRAVE_MS = 10 * 60 * 1000; // a dead post can be revived for 10 minutes
 
@@ -30,6 +31,7 @@ const votesNeeded = () => (neededPromise ??= base44.rpc("revive_votes_needed").c
 // Returns { votes, needed, revived, post } or null on failure.
 export function useRevive(user, onSignIn, onRevived) {
   const { toast } = useToast();
+  const rules = useGameRules();
   const [busyId, setBusyId] = useState(null);
   const [voted, setVoted] = useState(() => new Set());
 
@@ -41,7 +43,7 @@ export function useRevive(user, onSignIn, onRevived) {
         const r = await base44.rpc("revive_post", { p_post_id: post.id });
         setVoted((v) => new Set(v).add(post.id));
         if (r.revived) {
-          toast({ title: "🧟 It's alive!", description: "Your revive brought it back for 30 more minutes." });
+          toast({ title: "🧟 It's alive!", description: `Your revive brought it back for ${rules.revive_life_minutes} more minutes.` });
           onRevived?.(r.post);
         } else {
           toast({
@@ -57,7 +59,7 @@ export function useRevive(user, onSignIn, onRevived) {
         setBusyId(null);
       }
     },
-    [user, onSignIn, onRevived, toast]
+    [user, onSignIn, onRevived, toast, rules.revive_life_minutes]
   );
 
   return { revive, busyId, voted, setVoted };

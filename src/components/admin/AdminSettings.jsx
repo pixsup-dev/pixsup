@@ -55,6 +55,7 @@ const GROUPS = [
         help: "Hit = 1, emoji = 2, comment = 5. Lower it while the community is small.",
       },
       { key: "trending_saves", type: "switch", label: "🚨 Trending saves", help: "A hit in a trending post's last 10 minutes keeps it on the belt for another hour (the save time above)." },
+      { key: "revive_life_minutes", type: "number", label: "🧟 A revive brings it back for", unit: "min" },
       { key: "revive_votes_needed", type: "number", label: "Revives needed", unit: "people" },
     ],
   },
