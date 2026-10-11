@@ -1,6 +1,9 @@
 import React, { useRef, useState } from "react";
 import { Image } from "@/components/ui/image";
 import { Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import ClimbBadge, { glide } from "@/components/ClimbBadge";
+import useClimbers from "@/hooks/useClimbers";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
 
@@ -21,6 +24,8 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
       setVotedIds((prev) => new Set(prev).add(post.id));
     }
   };
+
+  const climbs = useClimbers((posts || []).map((p) => p.id));
 
   return (
     <section className="mb-6">
@@ -60,7 +65,9 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
             className="belt-row no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
           >
             {posts.map((post) => (
-              <div
+              <motion.div
+                layout="position"
+                transition={glide}
                 key={post.id}
                 className="belt-card relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border border-cyan-400/20 bg-[#151c28]"
               >
@@ -95,7 +102,8 @@ export default function RisingBelt({ posts, onVote, onOpen, from, to }) {
                     ⚡ {hitsLabel(post.hits || 0)}
                   </button>
                 </div>
-              </div>
+                <ClimbBadge places={climbs[post.id]} className="bottom-12 left-2" />
+              </motion.div>
             ))}
           </div>
           <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#0b0f17] to-transparent" />

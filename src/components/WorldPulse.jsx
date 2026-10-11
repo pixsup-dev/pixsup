@@ -7,6 +7,9 @@ import TopComment from "@/components/TopComment";
 import EmojiBurst from "@/components/EmojiBurst";
 import { isBreaking } from "@/lib/breaking";
 import useMoodTrends, { moodLabel } from "@/hooks/useMoodTrends";
+import { motion } from "framer-motion";
+import ClimbBadge, { glide } from "@/components/ClimbBadge";
+import useClimbers from "@/hooks/useClimbers";
 
 const JUST_IN_MS = 60 * 60 * 1000;
 // From this many stories, wider screens show two rows (top half on the first)
@@ -31,6 +34,7 @@ export default function WorldPulse({
   const [votedIds, setVotedIds] = useState(() => new Set());
   const scroller = useRef(null);
   const trends = useMoodTrends(posts.map((p) => p.id));
+  const climbs = useClimbers(posts.map((p) => p.id));
   const [canScroll, setCanScroll] = useState(false);
 
   useEffect(() => {
@@ -76,7 +80,9 @@ export default function WorldPulse({
     const mood = moodSummary(post.reactions, 1)?.[0];
     const voted = votedIds.has(post.id);
     return (
-      <button
+      <motion.button
+        layout="position"
+        transition={glide}
         key={post.id}
         onClick={() => onOpen(post)}
         className={`relative shrink-0 snap-start overflow-hidden rounded-xl border bg-[#151c28] text-left ${
@@ -156,7 +162,8 @@ export default function WorldPulse({
             <Zap className="h-3 w-3" /> {voted ? "Kept alive" : "Keep alive"} · {post.hits || 0}
           </span>
         </div>
-      </button>
+        <ClimbBadge places={climbs[post.id]} className="right-2 top-10" />
+      </motion.button>
     );
   };
 

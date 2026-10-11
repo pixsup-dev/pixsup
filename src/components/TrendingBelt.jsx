@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { Image } from "@/components/ui/image";
 import { Flame, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import useGameRules from "@/hooks/useGameRules";
+import { motion } from "framer-motion";
+import ClimbBadge, { glide } from "@/components/ClimbBadge";
+import useClimbers from "@/hooks/useClimbers";
 import { engagementScore } from "@/lib/engagement";
 
 const hitsLabel = (n) => (n === 1 ? "1 hit" : `${n} hits`);
@@ -37,6 +40,8 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false, tota
       (b.isPromoted ? 1 : 0) - (a.isPromoted ? 1 : 0) ||
       engagementScore(b) - engagementScore(a)
   );
+
+  const climbs = useClimbers(sorted.map((p) => p.id));
 
   return (
     <section className="mb-6" data-tour="belt">
@@ -83,7 +88,9 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false, tota
             className="belt-row no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 py-1"
           >
             {sorted.map((post) => (
-              <div
+              <motion.div
+                layout="position"
+                transition={glide}
                 key={post.id}
                 className={`belt-card relative w-44 shrink-0 snap-start overflow-hidden rounded-xl border-2 ${
                   post.isPromoted
@@ -139,7 +146,8 @@ export default function TrendingBelt({ posts, onVote, onOpen, race = false, tota
                     ⚡ {hitsLabel(post.hits || 0)}
                   </button>
                 </div>
-              </div>
+                <ClimbBadge places={climbs[post.id]} className="bottom-12 left-2" />
+              </motion.div>
             ))}
             {more && (
               <Link
