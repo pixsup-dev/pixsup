@@ -99,11 +99,14 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-              <span className="absolute left-1.5 top-1.5 flex items-center gap-1">
+              {/* Top-left badges stop short of the ⋮ menu; on narrow tiles the
+                  timer wraps onto its own line instead of running under it */}
+              <span className="absolute left-1.5 right-8 top-1.5 flex flex-col items-start gap-1">
+              <span className="flex flex-wrap items-center gap-1">
                 <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold text-yellow-400">
                   <Zap className="h-2.5 w-2.5" /> {post.hits || 0}
                 </span>
-                <span className="flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 font-mono text-[10px] font-bold text-orange-400">
+                <span className="flex items-center gap-0.5 whitespace-nowrap rounded-full bg-black/70 px-1.5 py-0.5 font-mono text-[10px] font-bold text-orange-400">
                   <Hourglass className="h-2.5 w-2.5" /> {timer}
                 </span>
                 {post.poll && (
@@ -118,16 +121,17 @@ function Tile({ post, index, now, flipped, survivor, onOpen, onReact, isSaved, o
                 )}
               </span>
               {survivor ? (
-                <span className="absolute left-1.5 top-7 rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
+                <span className="whitespace-nowrap rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
                   👑 SURVIVOR
                 </span>
               ) : (
                 post.boosted_at && (
-                  <span className="absolute left-1.5 top-7 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
+                  <span className="whitespace-nowrap rounded-full bg-white px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-black shadow-md">
                     {isSpotlit(post, now) ? "🔦 SPOTLIGHT" : "⚡ BOOSTED"}
                   </span>
                 )
               )}
+              </span>
               {post.new_face && !post.revived_at && !isBreaking(post, now) && (
                 <span className="absolute bottom-6 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-black">
                   🌱 NEW
