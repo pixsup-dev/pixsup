@@ -3,14 +3,20 @@
 // check used by postText, and the generic call used by explainNews.
 
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// "latest" aliases track Google's current Flash models, so retirements don't
-// break uploads. Flash-Lite answers in a few seconds; full Flash is the backup
-// when Lite is overloaded, rate-limited or slow.
+// Tried in order until one answers. On the free tier Google's newest models
+// (what the "latest" aliases point to) are often overloaded (503) or hang, so
+// steadier models go first and the aliases are the last resort. A retired
+// model (404) or any other failure is skipped too, so a retirement never breaks uploads.
+// GEMINI_MODEL (a function secret) puts a model of your choice first.
 const GEMINI_MODELS = [
-  Deno.env.get("GEMINI_MODEL") || "gemini-flash-lite-latest",
+  ...(Deno.env.get("GEMINI_MODEL") ? [Deno.env.get("GEMINI_MODEL")!] : []),
+  "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite",
   "gemini-flash-latest",
+  "gemini-flash-lite-latest",
 ];
-const RETRYABLE = new Set([429, 500, 503]);
+// Per model; a hung model moves on to the next instead of eating the whole wait
+const MODEL_TIMEOUT_MS = 25000;
 
 export const CATEGORIES = [
   "Nature", "Urban", "Art", "Food", "Travel", "Sports", "Gaming", "AI",
@@ -39,6 +45,54 @@ const GEMINI_PROMPT =
   "Also return a catchy title (max 60 characters, no hashtags), the single best category, " +
   "3-5 single-word hashtags without the # sign, and 2-3 fitting emojis.";
 
+// Asks the models in order, starting the next one when the current one fails
+// or hasn't answered within HEDGE_MS; the first answer wins and the rest are
+// cancelled. So a busy model costs a few seconds, not a whole timeout.
+const HEDGE_MS = 4000;
+// deno-lint-ignore no-explicit-any
+function firstAnswer(request: string): Promise<any> {
+  const stop = new AbortController();
+  return new Promise((resolve, reject) => {
+    let next = 0;
+    let running = 0;
+    let done = false;
+    let lastError: unknown = new Error("No Gemini model available");
+    let timer: number | undefined;
+
+    const launch = () => {
+      clearTimeout(timer);
+      if (done || next >= GEMINI_MODELS.length) return;
+      const model = GEMINI_MODELS[next++];
+      running++;
+      fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": GEMINI_API_KEY!, "Content-Type": "application/json" },
+        body: request,
+        signal: AbortSignal.any([stop.signal, AbortSignal.timeout(MODEL_TIMEOUT_MS)]),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(`Gemini ${model} → ${res.status}: ${data?.error?.message || "request failed"}`);
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          stop.abort();
+          resolve(data);
+        })
+        .catch((e) => {
+          if (done) return;
+          lastError = e;
+          running--;
+          if (next < GEMINI_MODELS.length) launch(); // failed: try the next one now
+          else if (running === 0) reject(lastError);
+        });
+      // still waiting: bring in the next model as well
+      timer = setTimeout(launch, HEDGE_MS);
+    };
+    launch();
+  });
+}
+
 // One Gemini call with model fallback. Returns the raw response, or
 // { blocked: true } when Google's own safety filters refused the input.
 // deno-lint-ignore no-explicit-any
@@ -54,29 +108,7 @@ export async function callGemini(parts: unknown[], schema: unknown, maxOutputTok
     },
   });
 
-  // deno-lint-ignore no-explicit-any
-  let data: any = {};
-  for (const [i, model] of GEMINI_MODELS.entries()) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: { "x-goog-api-key": GEMINI_API_KEY!, "Content-Type": "application/json" },
-        body: request,
-        signal: AbortSignal.timeout(15000),
-      }
-    ).catch((e) => {
-      // a slow model counts as unavailable: move on to the next one
-      if (i === GEMINI_MODELS.length - 1) throw e;
-      return null;
-    });
-    if (!res) continue;
-    data = await res.json().catch(() => ({}));
-    if (res.ok) break;
-    if (!RETRYABLE.has(res.status) || i === GEMINI_MODELS.length - 1) {
-      throw new Error(`Gemini ${model} → ${res.status}: ${data?.error?.message || "request failed"}`);
-    }
-  }
+  const data = await firstAnswer(request);
 
   if (data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason === "SAFETY") {
     return { blocked: true };
