@@ -74,7 +74,7 @@ const MAX_LIVE_TOP = 14; // World Pulse candidates alive at once
 const PER_FEED_PER_RUN = 1; // spread each run across topics
 const MIN_RUN_GAP_MS = 10 * 60 * 1000; // throttle repeat calls while the grid is healthy
 const DELETE_AFTER_MS = 2 * 24 * 60 * 60 * 1000; // purge expired news after 2 days
-const SUMMARY_MAX = 500; // enough of the article for Reels mode; the rest is a tap away
+const SUMMARY_MAX = 400; // the database allows 400 (posts.summary); the rest is a tap away
 // When the caps are full, fresh stories replace news nobody has engaged with
 // that has been up at least this long (engaged news keeps its full life)
 const RETIRE_AFTER_MS = 60 * 60 * 1000;
@@ -409,15 +409,6 @@ Deno.serve(async (req) => {
     const topicRoom = makeRoom(freshTopic.length, Math.max(0, MAX_LIVE_NEWS - liveNews.length), liveNews);
     const newTopic = freshTopic.slice(0, topicRoom);
 
-    // Retire the replaced tiles (they expire now; cleanup deletes them later)
-    if (retireIds.length) {
-      const { error: retireError } = await admin
-        .from("posts")
-        .update({ expires_at: nowIso })
-        .in("id", retireIds);
-      if (retireError) throw retireError;
-    }
-
     const rows = [
       ...newTop.map((s) => toRow(s, expiresAt, true)),
       ...newTopic.map((s) => toRow(s, expiresAt, false)),
@@ -432,8 +423,29 @@ Deno.serve(async (req) => {
         // index not created yet
         ({ error: insertError } = await admin.from("posts").insert(rows));
       }
-      if (insertError) throw insertError;
+      if (insertError) {
+        // One bad story mustn't block the batch: save them one at a time
+        console.error("batch insert failed, retrying one by one:", insertError.message);
+        let saved = 0;
+        for (const row of rows) {
+          const { error } = await admin.from("posts").upsert([row], { onConflict: "source_url", ignoreDuplicates: true });
+          if (error) console.error("skipped a story:", row.source_url, error.message);
+          else saved++;
+        }
+        if (!saved) throw insertError;
+      }
     }
+
+    // Retire the replaced tiles only now that their replacements are saved
+    // (retiring first emptied the feed whenever saving failed)
+    if (retireIds.length) {
+      const { error: retireError } = await admin
+        .from("posts")
+        .update({ expires_at: nowIso })
+        .in("id", retireIds);
+      if (retireError) throw retireError;
+    }
+
 
     return json({
       success: true,
