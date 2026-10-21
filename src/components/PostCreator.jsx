@@ -51,9 +51,42 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
 
   const entering = !!challenge?.tag && !alreadyEntered;
 
+  // The slow part (shrinking, uploading and the AI check) starts as soon as a
+  // photo is picked, so it's usually done by the time people tap Publish.
+  // prep holds the run for one file; prepState shows its progress.
+  const prep = useRef(null);
+  const [prepState, setPrepState] = useState(null); // "working" | "ready" | null
+  const prepare = (f, forChallenge) => {
+    const promise = (async () => {
+      // Photos are resized and stripped of location data before upload
+      const upload = await compressImage(f);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: upload });
+      const mediaType = f.type.startsWith("video") ? "video" : "image";
+      let analysis = null;
+      let scanError = null;
+      if (mediaType === "image") {
+        try {
+          const res = await base44.functions.invoke("analyzePostMedia", { file_url, challenge: forChallenge });
+          analysis = res.data || {};
+        } catch (e) {
+          scanError = e;
+        }
+      }
+      return { file_url, mediaType, analysis, scanError };
+    })();
+    const run = { file: f, forChallenge, promise };
+    prep.current = run;
+    setPrepState("working");
+    promise
+      .then(() => prep.current === run && setPrepState("ready"))
+      .catch(() => prep.current === run && setPrepState(null));
+    return run;
+  };
+
   const handleFile = (f) => {
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    if (user) prepare(f, entering);
   };
 
   const submit = async () => {
@@ -64,11 +97,13 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
     }
     setBusy(true);
     try {
-      setStatus("Uploading media…");
-      // Photos are resized and stripped of location data before upload
-      const upload = await compressImage(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: upload });
-      const mediaType = file.type.startsWith("video") ? "video" : "image";
+      // Reuse the run started when the photo was picked (or start one now)
+      let run = prep.current;
+      if (!run || run.file !== file || run.forChallenge !== entering) run = prepare(file, entering);
+      setStatus(
+        file.type.startsWith("video") ? "Uploading media…" : "AI safety scan, auto-title & tagging…"
+      );
+      const { file_url, mediaType, analysis: scanned, scanError } = await run.promise;
 
       let category = null;
       let hashtags = [];
@@ -80,13 +115,10 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
       if (mediaType === "image") {
         // Images must pass the AI safety scan — the database rejects unapproved
         // images, so if the scan is unavailable there's no point publishing.
-        setStatus("AI safety scan, auto-title & tagging…");
-        let analysis;
-        try {
-          const res = await base44.functions.invoke("analyzePostMedia", { file_url, challenge: entering });
-          analysis = res.data || {};
-        } catch (e) {
-          console.error(e);
+        if (scanError) {
+          console.error(scanError);
+          prep.current = null; // try again from scratch next time
+          setPrepState(null);
           toast({
             title: "Couldn't check this image",
             description: "The safety scan is unavailable right now — please try again in a moment.",
@@ -94,12 +126,15 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
           });
           return;
         }
+        const analysis = scanned || {};
         if (analysis.safe === false) {
           toast({
             title: "Content Flagged",
             description: "This image can't be posted — it was flagged by AI moderation.",
             variant: "destructive",
           });
+          prep.current = null;
+          setPrepState(null);
           setFile(null);
           setPreview(null);
           return;
@@ -151,6 +186,8 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
       onClose();
     } catch (e) {
       console.error(e);
+      prep.current = null;
+      setPrepState(null);
       const tooBig = /exceeded the maximum|too large|413/i.test(String(e?.message || ""));
       const slowDown = /slow down/i.test(String(e?.message || ""));
       const paused = /paused/i.test(String(e?.message || ""));
@@ -262,6 +299,17 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
             </div>
           )}
         </div>
+        {file && !busy && prepState && (
+          <p className="-mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-gray-400">
+            {prepState === "working" ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" /> Getting your photo ready…
+              </>
+            ) : (
+              <span className="text-green-400">✓ Ready to publish</span>
+            )}
+          </p>
+        )}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
