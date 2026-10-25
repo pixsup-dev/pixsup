@@ -18,6 +18,7 @@ import PostDetail from "@/components/PostDetail";
 import { sameTag, isAllTag, keywordsForTag } from "@/components/CategoryChips";
 import { engagementScore } from "@/lib/engagement";
 import { isSpotlit } from "@/lib/boosts";
+import usePostDeleted from "@/hooks/usePostDeleted";
 
 // News topics for the pulse tabs (ids match the news engine's categories)
 const NEWS_TOPICS = [
@@ -52,6 +53,7 @@ export default function Home() {
   const challenge = useTodaysChallenge();
   const rules = useGameRules(); // admins can switch Home sections off
   const [activePost, setActivePost] = useState(null);
+  usePostDeleted((id) => setActivePost((a) => (a?.id === id ? null : a)));
   const [pulseTopic, setPulseTopic] = useState("World");
 
   // Native pull-to-refresh (mobile + tablet)

@@ -15,6 +15,7 @@ import { HASHTAG_POOLS, topHashtags } from "@/components/CategoryChips";
 import useNotifications from "@/hooks/useNotifications";
 import { useBlocklist, authorKeyOf, blocklist } from "@/hooks/useBlocklist";
 import { savedPosts } from "@/hooks/useSavedPosts";
+import usePostDeleted from "@/hooks/usePostDeleted";
 
 const isLive = (p, now = Date.now()) =>
   !p.hidden_at && (!p.expires_at || new Date(p.expires_at).getTime() > now);
@@ -107,6 +108,7 @@ export default function AppLayout() {
       unsubscribe();
     };
   }, [loadPosts]);
+  usePostDeleted((id) => setPosts((prev) => prev.filter((p) => p.id !== id)));
 
   const refreshUser = useCallback(async () => {
     try {

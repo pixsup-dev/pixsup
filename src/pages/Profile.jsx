@@ -10,6 +10,7 @@ import useSavedPosts from "@/hooks/useSavedPosts";
 import { formatRemaining } from "@/lib/time";
 import PostDetail from "@/components/PostDetail";
 import AvatarPicker from "@/components/AvatarPicker";
+import usePostDeleted from "@/hooks/usePostDeleted";
 
 const HOUR = 60 * 60 * 1000;
 const lifeOf = (p) =>
@@ -79,6 +80,10 @@ export default function Profile() {
   const [now, setNow] = useState(() => Date.now());
   const [tab, setTab] = useState("live");
   const [active, setActive] = useState(null);
+  usePostDeleted((id) => {
+    setAllMine((m) => m.filter((p) => p.id !== id));
+    setActive((a) => (a?.id === id ? null : a));
+  });
   const [loggingOut, setLoggingOut] = useState(false);
   const { saved } = useSavedPosts();
 

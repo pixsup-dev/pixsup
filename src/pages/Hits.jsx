@@ -9,6 +9,7 @@ import ShareButton from "@/components/ShareButton";
 import StoryCardButton from "@/components/StoryCardButton";
 import PostDetail from "@/components/PostDetail";
 import { formatRemaining } from "@/lib/time";
+import usePostDeleted from "@/hooks/usePostDeleted";
 
 const HOUR = 60 * 60 * 1000;
 const DYING_MS = 10 * 60 * 1000;
@@ -53,6 +54,10 @@ export default function Hits() {
   const [votes, setVotes] = useState([]);
   const [now, setNow] = useState(() => Date.now());
   const [active, setActive] = useState(null);
+  usePostDeleted((id) => {
+    setMine((m) => m.filter((p) => p.id !== id));
+    setActive((a) => (a?.id === id ? null : a));
+  });
   const [shown, setShown] = useState(8); // activity lines visible before "Show more"
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Flag, Ban, X, Loader2 } from "lucide-react";
+import { MoreVertical, Flag, Ban, X, Loader2, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useBlocklist, authorKeyOf } from "@/hooks/useBlocklist";
 import { useToast } from "@/components/ui/use-toast";
@@ -17,7 +17,27 @@ export default function PostActionMenu({ post, className = "" }) {
   const btnRef = useRef(null);
   const { block } = useBlocklist();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  // Your own post: delete instead of report/block. Admins can delete any post.
+  const mine = !!user && post.created_by_id === user.id;
+  const canDelete = mine || user?.role === "admin";
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const doDelete = async () => {
+    setDeleting(true);
+    try {
+      await base44.entities.Post.delete(post.id);
+      // Feeds and open views drop it right away (the photo file is swept nightly)
+      window.dispatchEvent(new CustomEvent("pixsup:post-deleted", { detail: post.id }));
+      toast({ title: "Post deleted" });
+      setConfirmDelete(false);
+    } catch (err) {
+      toast({ title: "Couldn't delete the post", description: err?.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const toggle = (e) => {
     e.stopPropagation();
@@ -84,6 +104,20 @@ export default function PostActionMenu({ post, className = "" }) {
             className="fixed z-[60] w-40 overflow-hidden rounded-xl border border-white/10 bg-[#151c28] py-1 shadow-2xl"
             style={pos}
           >
+            {canDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  setConfirmDelete(true);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-red-300 transition hover:bg-white/10"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-red-400" /> Delete post
+              </button>
+            )}
+            {!mine && (
+            <>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -104,8 +138,42 @@ export default function PostActionMenu({ post, className = "" }) {
             >
               <Ban className="h-3.5 w-3.5 text-orange-400" /> Block User
             </button>
+            </>
+            )}
           </div>
         </>,
+        document.body
+      )}
+
+      {confirmDelete && createPortal(
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-full max-w-xs space-y-4 rounded-2xl border border-white/10 bg-[#151c28] p-5">
+            <h4 className="text-sm font-extrabold text-white">Delete this post?</h4>
+            <p className="text-xs text-gray-400">
+              {mine ? "It disappears" : "It disappears for everyone"} right away, with its comments and hits. This can't be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200 transition hover:bg-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doDelete}
+                disabled={deleting}
+                className="spring-tap flex-1 rounded-xl bg-red-600 py-2 text-xs font-extrabold text-white transition hover:bg-red-500 active:scale-95 disabled:opacity-50"
+              >
+                {deleting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>,
         document.body
       )}
 
