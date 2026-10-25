@@ -1,0 +1,13 @@
+{
+  "name": "pixsup-daily-video",
+  "private": true,
+  "type": "module",
+  "description": "Makes vertical TikTok/Reels videos from real Pixsup posts",
+  "scripts": {
+    "video": "node make-video.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer-core": "^23.11.1"
+  }
+}
