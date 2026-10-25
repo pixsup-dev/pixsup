@@ -84,6 +84,11 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
   };
 
   const handleFile = (f) => {
+    // Photos only for now: videos come back once they're shrunk and AI-checked
+    if (!f.type.startsWith("image/")) {
+      toast({ title: "Photos only for now", description: "Video posts are coming soon. Pick a photo instead." });
+      return;
+    }
     setFile(f);
     setPreview(URL.createObjectURL(f));
     if (user) prepare(f, entering);
@@ -282,7 +287,7 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/*"
+            accept="image/*"
             className="hidden"
             onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])}
           />
@@ -295,7 +300,7 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
           ) : (
             <div className="flex flex-col items-center gap-2 text-gray-400">
               <UploadCloud className="h-8 w-8" />
-              <span className="text-xs">Drag & drop or tap to upload an image or video</span>
+              <span className="text-xs">Drag & drop or tap to upload a photo</span>
             </div>
           )}
         </div>
