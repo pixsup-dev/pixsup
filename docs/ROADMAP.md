@@ -47,5 +47,6 @@ As more people use Pixsup, tighten the times back toward 60 / 5 / 3 / 10. Short 
 ## 5. Later projects
 
 - **App Store and Play Store apps.** Same accounts and posts as the website. Keep the rules in Admin settings so they change instantly without waiting for app review. Needs Apple's in-app purchases for paid boosts and Sign in with Apple.
+- **10-second video posts** (switched off 2026-10-25). Before turning them on: shrink each clip to about 720p (2–3 MB), run the AI check on a few frames, and stream through Cloudflare Stream or Mux. Bandwidth, not storage, is the cost: about $250–400/month at 1,000 daily users. Switch: app_settings videos_enabled.
 - **Paid boosts** (built, switched off) once Stripe is set up.
 - **AI check on news photos** (on hold).
