@@ -135,6 +135,9 @@ export function challengeVideo({ challenge, entries }) {
     .tag{font-size:20px;font-weight:900;color:#22d3ee;background:rgba(34,211,238,.12);border:2px solid rgba(34,211,238,.45);
       padding:6px 14px;border-radius:999px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;padding:0 14px}
+    .grid.g1{grid-template-columns:1fr;padding:0 34px}
+    .grid.g1 img{aspect-ratio:4/5}
+    .grid.g3 img:last-child{grid-column:1/3;aspect-ratio:2/1}
     .grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;border:2px solid rgba(255,255,255,.12)}
     .grid .pop{transition-duration:.5s}
     .cam{font-size:96px;animation:bob 1.2s ease-in-out infinite}
@@ -143,7 +146,7 @@ export function challengeVideo({ challenge, entries }) {
   const words = esc(challenge.prompt).split(" ").map((w) => `<span class="w">${w}</span>`).join(" ");
   const middle = shown.length
     ? `<div class="sub pop" id="m1">${shown.length === 1 ? "The first entry 👇" : "Entries so far 👇"}</div>
-       <div class="grid">${shown.map((p, i) => `<img class="pop" id="g${i}" src="${esc(p.media_url)}">`).join("")}</div>`
+       <div class="grid g${shown.length}">${shown.map((p, i) => `<img class="pop" id="g${i}" src="${esc(p.media_url)}">`).join("")}</div>`
     : `<div class="cam pop" id="m1">📸</div>
        <div class="big pop" id="g0">Nobody has entered yet.</div>
        <div class="big pop cyan" id="g1">Be the first ✨</div>`;
