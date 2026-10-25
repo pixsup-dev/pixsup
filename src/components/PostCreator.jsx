@@ -154,7 +154,6 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
           : null;
 
       setStatus("Publishing to the Live Grid…");
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       await base44.entities.Post.create({
         title:
           title.trim() ||
@@ -165,7 +164,8 @@ export default function PostCreator({ challenge, onClose, onCreated }) {
         thumbnail_url: file_url,
         hits: 0,
         is_trending: false,
-        expires_at: expiresAt,
+        // no expires_at: the server gives the post its life from Admin → Settings
+        // (sending one here capped every post at an hour)
         category,
         // a challenge entry carries the challenge's tag (the database also checks it)
         hashtags: isEntry ? [...new Set([challenge.tag, ...hashtags])].slice(0, 6) : hashtags,
