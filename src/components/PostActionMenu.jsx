@@ -8,18 +8,12 @@ import { useAuth } from "@/lib/AuthContext";
 
 const REASONS = ["Spam", "Inappropriate", "Harassment"];
 
-export default function PostActionMenu({ post, className = "" }) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState(null);
-  const [reporting, setReporting] = useState(false);
-  const [reason, setReason] = useState("Spam");
-  const [sending, setSending] = useState(false);
-  const btnRef = useRef(null);
-  const { block } = useBlocklist();
+// Deleting a post: your own, or any post for admins. Returns whether the
+// signed-in person may, ask() to open the confirm box, and that box to render.
+export function useDeletePost(post) {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
-  // Your own post: delete instead of report/block. Admins can delete any post.
-  const mine = !!user && post.created_by_id === user.id;
+  const mine = !!user && !!post && post.created_by_id === user.id;
   const canDelete = mine || user?.role === "admin";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -38,6 +32,69 @@ export default function PostActionMenu({ post, className = "" }) {
       setDeleting(false);
     }
   };
+
+  const dialog =
+    confirmDelete &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-full max-w-xs space-y-4 rounded-2xl border border-white/10 bg-[#151c28] p-5">
+          <h4 className="text-sm font-extrabold text-white">Delete this post?</h4>
+          <p className="text-xs text-gray-400">
+            {mine ? "It disappears" : "It disappears for everyone"} right away, with its comments and hits. This can't be undone.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirmDelete(false)}
+              disabled={deleting}
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200 transition hover:bg-white/10"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={doDelete}
+              disabled={deleting}
+              className="spring-tap flex-1 rounded-xl bg-red-600 py-2 text-xs font-extrabold text-white transition hover:bg-red-500 active:scale-95 disabled:opacity-50"
+            >
+              {deleting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Delete"}
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  return { mine, canDelete, ask: () => setConfirmDelete(true), dialog };
+}
+
+// A plain "Delete my post" button (the full-screen view's More tab)
+export function DeletePostButton({ post, className = "" }) {
+  const del = useDeletePost(post);
+  if (!del.canDelete) return null;
+  return (
+    <>
+      <button onClick={del.ask} className={className}>
+        <Trash2 className="h-3.5 w-3.5" /> {del.mine ? "Delete my post" : "Delete post (admin)"}
+      </button>
+      {del.dialog}
+    </>
+  );
+}
+
+export default function PostActionMenu({ post, className = "" }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const [reporting, setReporting] = useState(false);
+  const [reason, setReason] = useState("Spam");
+  const [sending, setSending] = useState(false);
+  const btnRef = useRef(null);
+  const { block } = useBlocklist();
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const del = useDeletePost(post);
+  const { mine, canDelete } = del;
 
   const toggle = (e) => {
     e.stopPropagation();
@@ -109,7 +166,7 @@ export default function PostActionMenu({ post, className = "" }) {
                 onClick={(e) => {
                   e.stopPropagation();
                   setOpen(false);
-                  setConfirmDelete(true);
+                  del.ask();
                 }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-red-300 transition hover:bg-white/10"
               >
@@ -145,37 +202,7 @@ export default function PostActionMenu({ post, className = "" }) {
         document.body
       )}
 
-      {confirmDelete && createPortal(
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="w-full max-w-xs space-y-4 rounded-2xl border border-white/10 bg-[#151c28] p-5">
-            <h4 className="text-sm font-extrabold text-white">Delete this post?</h4>
-            <p className="text-xs text-gray-400">
-              {mine ? "It disappears" : "It disappears for everyone"} right away, with its comments and hits. This can't be undone.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleting}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold text-gray-200 transition hover:bg-white/10"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={doDelete}
-                disabled={deleting}
-                className="spring-tap flex-1 rounded-xl bg-red-600 py-2 text-xs font-extrabold text-white transition hover:bg-red-500 active:scale-95 disabled:opacity-50"
-              >
-                {deleting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {del.dialog}
 
       {reporting && createPortal(
         <div

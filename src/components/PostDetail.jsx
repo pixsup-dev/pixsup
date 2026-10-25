@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Hourglass, ExternalLink, Bookmark, ChevronUp, ChevronDown } from "lucide-react";
 import { categoryFor } from "@/components/CategoryChips";
 import ShareButton from "@/components/ShareButton";
-import PostActionMenu from "@/components/PostActionMenu";
+import PostActionMenu, { DeletePostButton } from "@/components/PostActionMenu";
 import useSavedPosts from "@/hooks/useSavedPosts";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
@@ -354,10 +354,16 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
                 {isSaved(current.id) ? "Saved" : "Save for later"}
               </button>
             </div>
-            <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs text-gray-400">
-              Something wrong with this post?
-              <PostActionMenu post={current} />
-            </div>
+            <DeletePostButton
+              post={current}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 py-2 text-xs font-extrabold text-red-300"
+            />
+            {current.created_by_id !== user?.id && (
+              <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs text-gray-400">
+                Something wrong with this post?
+                <PostActionMenu post={current} />
+              </div>
+            )}
           </div>
         )}
       </div>

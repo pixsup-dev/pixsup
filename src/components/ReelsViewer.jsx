@@ -7,6 +7,7 @@ import { useMembers } from "@/hooks/useUsernames";
 import Avatar from "@/components/Avatar";
 import ShareButton from "@/components/ShareButton";
 import WatchButton from "@/components/WatchButton";
+import PostActionMenu from "@/components/PostActionMenu";
 import { PostCard } from "@/components/PostDetail";
 import { reactionPalette } from "@/lib/reactions";
 import { isBreaking } from "@/lib/breaking";
@@ -146,12 +147,13 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
     <section className="relative flex h-full snap-start snap-always flex-col overflow-hidden bg-[#06080d] text-white">
       <canvas ref={glow} width={12} height={16} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-70" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/85" />
-      {/* Top: close, and the life bar */}
+      {/* Top: close, the life bar, and ⋮ (delete your post, or report/block) */}
       <div className="relative flex shrink-0 items-center gap-3 px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.6rem)]">
         <button onClick={onClose} aria-label="Close" className="shrink-0 rounded-full bg-white/10 p-2">
           <X className="h-5 w-5" />
         </button>
         <LifeBar post={post} now={now} />
+        <PostActionMenu post={post} className="h-8 w-8 shrink-0 bg-white/10" />
       </div>
 
       {/* The photo gets all the room between the life bar and the details.
