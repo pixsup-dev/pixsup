@@ -2,7 +2,7 @@
 // = 1080×1920) that plays its own timeline and sets window.__done at the end.
 // Everything shown comes from real Pixsup data passed in.
 
-const esc = (s) =>
+export const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 const BASE_CSS = `
@@ -44,7 +44,7 @@ const RUNNER = `
   }
 `;
 
-const page = (css, body, script) => `<!doctype html><html><head><meta charset="utf-8">
+export const page = (css, body, script) => `<!doctype html><html><head><meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800;900&display=swap" rel="stylesheet">
 <style>${BASE_CSS}${css}</style></head><body>${body}

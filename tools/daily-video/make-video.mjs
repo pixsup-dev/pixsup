@@ -1,9 +1,9 @@
 // Makes today's Pixsup videos from real posts, ready for TikTok / Reels /
 // Shorts (1080×1920 MP4, no sound: add a trending sound in the app).
 //
-//   node make-video.mjs            both videos
-//   node make-video.mjs survive    only "Will it survive?"
-//   node make-video.mjs challenge  only "Today's challenge"
+//   node make-video.mjs             all of them
+//   node make-video.mjs survive     only "Will it survive?"
+//   (or: challenge, howto, versus, graveyard; several work too)
 //
 // Videos and a ready-to-paste caption land in Desktop/Pixsup videos/Daily.
 import fs from "node:fs";
@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
 import ffmpeg from "ffmpeg-static";
 import { surviveVideo, challengeVideo } from "./templates.mjs";
+import { howtoVideo, versusVideo, graveyardVideo } from "./templates-more.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(os.homedir(), "Desktop", "Pixsup videos", "Daily");
@@ -74,6 +75,35 @@ async function pickChallenge() {
   return { challenge, entries };
 }
 
+// Any live photo for the how-to (member photos first)
+async function pickHowto() {
+  const now = new Date().toISOString();
+  const live = (q) => rest(`posts?select=media_url&media_type=eq.image&expires_at=gt.${now}&${q}&order=created_date.desc&limit=5`);
+  const post = (await live("isNews=eq.false")).find((p) => p.media_url) || (await live("isNews=eq.true")).find((p) => p.media_url);
+  if (!post) return null;
+  return { post, rules: await rpc("game_rules") };
+}
+
+// A wall of live photos behind the comparison
+async function pickVersus() {
+  const now = new Date().toISOString();
+  const members = await rest(`posts?select=media_url&media_type=eq.image&isNews=eq.false&expires_at=gt.${now}&order=created_date.desc&limit=8`);
+  const news = await rest(`posts?select=media_url&media_type=eq.image&isNews=eq.true&expires_at=gt.${now}&order=created_date.desc&limit=8`);
+  const photos = [...members, ...news].filter((p) => p.media_url).slice(0, 8);
+  return photos.length >= 2 ? { photos } : null;
+}
+
+// Posts that died in the last 24 hours (member photos first, then news)
+async function pickGraveyard() {
+  const now = new Date().toISOString();
+  const dayAgo = new Date(Date.now() - 24 * 3600e3).toISOString();
+  const died = (q) =>
+    rest(`posts?select=title,media_url,created_date,expires_at,hits&media_type=eq.image&expires_at=lt.${now}&expires_at=gt.${dayAgo}&${q}&order=expires_at.desc&limit=4`);
+  let dead = (await died("isNews=eq.false")).filter((p) => p.media_url);
+  if (dead.length < 2) dead = [...dead, ...(await died("isNews=eq.true")).filter((p) => p.media_url)].slice(0, 4);
+  return dead.length ? { dead } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Recording
 // ---------------------------------------------------------------------------
@@ -119,49 +149,93 @@ async function record(browser, html, outFile) {
 
 // ---------------------------------------------------------------------------
 
-const which = process.argv[2] || "all";
+// Each video: its name, how to get its data, its design and its caption
+const VIDEOS = [
+  {
+    key: "survive",
+    name: "Will it survive",
+    pick: pickSurvivor,
+    make: surviveVideo,
+    skip: "No live photo with 30+ minutes left right now.",
+    done: (d) => `"${d.post.title}"${d.username ? ` by @${d.username}` : ""}`,
+    caption: () =>
+      "This photo dies when its timer hits zero ⏳ Will anyone keep it alive? Go save it 👉 pixsup.com\n" +
+      "#pixsup #savethepost #newapp #photography #willitsurvive",
+  },
+  {
+    key: "challenge",
+    name: "Todays challenge",
+    pick: pickChallenge,
+    make: challengeVideo,
+    skip: "No challenge today.",
+    done: (d) => `${d.challenge.tag}: ${d.entries.length} entr${d.entries.length === 1 ? "y" : "ies"}`,
+    caption: (d) =>
+      `Today's photo challenge: ${d.challenge.prompt} 📸 ${d.entries.length ? "The crowd decides which one lives." : "Nobody has entered yet. Be the first!"} pixsup.com\n` +
+      `#pixsup ${d.challenge.tag} #photochallenge #newapp`,
+  },
+  {
+    key: "howto",
+    name: "How to save a post",
+    pick: pickHowto,
+    make: howtoVideo,
+    skip: "No live photo to use.",
+    done: () => "3 steps",
+    caption: (d) =>
+      `How to save a post on Pixsup ⚡ Find one that's dying, double-tap it, and it's back to ${d.rules.rescue_minutes} minutes with your name on it. pixsup.com\n` +
+      "#pixsup #howto #newapp #savethepost",
+  },
+  {
+    key: "versus",
+    name: "Pixsup vs other apps",
+    pick: pickVersus,
+    make: versusVideo,
+    skip: "Not enough live photos.",
+    done: (d) => `${d.photos.length} photos behind it`,
+    caption: () =>
+      "No followers. No algorithm games. On Pixsup every post dies unless people care 💀⚡ pixsup.com\n" +
+      "#pixsup #newapp #socialmedia #nofollowers",
+  },
+  {
+    key: "graveyard",
+    name: "Graveyard roll call",
+    pick: pickGraveyard,
+    make: graveyardVideo,
+    skip: "Nothing died in the last 24 hours.",
+    done: (d) => `${d.dead.length} posts`,
+    caption: () =>
+      "These posts died today 🪦 Gone forever. Don't let the good ones die 👉 pixsup.com\n" +
+      "#pixsup #rip #newapp #graveyard",
+  },
+];
+
+const wanted = process.argv.slice(2);
+const chosen = wanted.length ? VIDEOS.filter((v) => wanted.includes(v.key)) : VIDEOS;
+if (!chosen.length) {
+  console.error(`Pick one of: ${VIDEOS.map((v) => v.key).join(", ")}`);
+  process.exit(1);
+}
 fs.mkdirSync(OUT_DIR, { recursive: true });
 if (!CHROME) {
   console.error("Couldn't find Chrome or Edge on this computer.");
   process.exit(1);
 }
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--hide-scrollbars", "--autoplay-policy=no-user-gesture-required"] });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--hide-scrollbars"] });
 const made = [];
-// Each video gets a caption file next to it, ready to paste
-const caption = (videoFile, text) => fs.writeFileSync(videoFile.replace(/\.mp4$/, " - caption.txt"), text + "\n");
 
 try {
-  if (which === "all" || which === "survive") {
-    console.log("⏳ Finding a live photo for \"Will it survive?\"…");
-    const data = await pickSurvivor();
-    if (!data) console.log("   No live photo with 30+ minutes left right now. Skipped.");
-    else {
-      const file = path.join(OUT_DIR, `${today} - Will it survive.mp4`);
-      await record(browser, surviveVideo(data), file);
-      made.push(file);
-      caption(
-        file,
-        `This photo dies when its timer hits zero ⏳ Will anyone keep it alive? Go save it 👉 pixsup.com\n` +
-          `#pixsup #savethepost #newapp #photography #willitsurvive`
-      );
-      console.log(`   ✓ "${data.post.title}"${data.username ? ` by @${data.username}` : ""}`);
+  for (const v of chosen) {
+    console.log(`🎬 ${v.name}…`);
+    const data = await v.pick();
+    if (!data) {
+      console.log(`   ${v.skip} Skipped.`);
+      continue;
     }
-  }
-  if (which === "all" || which === "challenge") {
-    console.log("📸 Making \"Today's challenge\"…");
-    const data = await pickChallenge();
-    if (!data) console.log("   No challenge today. Skipped.");
-    else {
-      const file = path.join(OUT_DIR, `${today} - Todays challenge.mp4`);
-      await record(browser, challengeVideo(data), file);
-      made.push(file);
-      caption(
-        file,
-        `Today's photo challenge: ${data.challenge.prompt} 📸 ${data.entries.length ? "The crowd decides which one lives." : "Nobody has entered yet. Be the first!"} pixsup.com\n` +
-          `#pixsup ${data.challenge.tag} #photochallenge #newapp`
-      );
-      console.log(`   ✓ ${data.challenge.tag}: ${data.entries.length} entr${data.entries.length === 1 ? "y" : "ies"}`);
-    }
+    const file = path.join(OUT_DIR, `${today} - ${v.name}.mp4`);
+    await record(browser, v.make(data), file);
+    // A caption file next to each video, ready to paste
+    fs.writeFileSync(file.replace(/\.mp4$/, " - caption.txt"), v.caption(data) + "\n");
+    made.push(file);
+    console.log(`   ✓ ${v.done(data)}`);
   }
 } finally {
   await browser.close();
