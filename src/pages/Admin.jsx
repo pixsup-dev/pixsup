@@ -8,10 +8,12 @@ import ChallengeScheduler from "@/components/ChallengeScheduler";
 import AppErrors from "@/components/AppErrors";
 import AdminOverview from "@/components/admin/AdminOverview";
 import AdminTeam from "@/components/admin/AdminTeam";
+import AdminMembers from "@/components/admin/AdminMembers";
 import AdminSettings from "@/components/admin/AdminSettings";
 
 const TABS = [
   ["overview", "📊 Overview"],
+  ["members", "👤 Members"],
   ["reports", "🚩 Reports"],
   ["challenges", "📸 Challenges"],
   ["team", "👥 Team"],
@@ -130,6 +132,7 @@ export default function Admin() {
 
       {tab === "overview" && <AdminOverview onOpen={openTab} />}
       {tab === "challenges" && <ChallengeScheduler />}
+      {tab === "members" && <AdminMembers />}
       {tab === "team" && <AdminTeam me={user} />}
       {tab === "settings" && <AdminSettings />}
       {tab === "errors" && <AppErrors />}

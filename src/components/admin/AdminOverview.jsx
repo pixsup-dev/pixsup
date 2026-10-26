@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 
 // The numbers that matter, at a glance. Items needing attention are marked.
 const CARDS = [
-  ["members", "Members", (s) => (s.members_today ? `+${s.members_today} today` : "none new today")],
+  ["members", "Members", (s) => (s.members_today ? `+${s.members_today} today · see who ›` : "see who ›"), "members", false],
   ["live_member_posts", "Live member posts", (s) => `${s.live_posts} live in total`],
   ["posts_today", "Posts today", (s) => `${s.comments_today} comments · ${s.hits_today} hits`],
   ["trending", "Trending now", () => "on the 24-hour belt"],
@@ -29,9 +29,10 @@ export default function AdminOverview({ onOpen }) {
 
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-      {CARDS.map(([key, label, sub, tab]) => {
+      {CARDS.map(([key, label, sub, tab, warn = true]) => {
         const value = stats[key] ?? 0;
-        const alert = !!tab && value > 0;
+        // a card with a tab opens it; most are warnings when above zero
+        const alert = !!tab && warn && value > 0;
         const Box = tab ? "button" : "div";
         return (
           <Box
