@@ -40,3 +40,6 @@ base44/.app.jsonc
 # Supabase CLI local state
 supabase/.temp
 supabase/.branches
+
+# Promo video render frames
+tools/promo-video/.cache

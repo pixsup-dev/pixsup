@@ -1,0 +1,231 @@
+<!doctype html>
+<!-- The Pixsup commercial. Every frame is a pure function of the frame number
+     (see seek() below), so a render is exact and repeatable. Open this file
+     with ?play in a browser to preview it (no sound). -->
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Pixsup commercial</title>
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter/index.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --red: #ff2d3f; --green: #2bff88; --cyan: #22d3ee; --amber: #fbbf24; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+  body { font-family: "Inter Variable", Inter, "Segoe UI", sans-serif; color: #fff; -webkit-font-smoothing: antialiased; font-feature-settings: "tnum"; paint-order: stroke fill; }
+  .layer { position: absolute; inset: 0; }
+  #stage { position: absolute; inset: 0; overflow: hidden; background: #030406; perspective: 2600px; }
+
+  /* Light behind the phone */
+  #backlight { position: absolute; left: 50%; top: 50%; width: 1500px; height: 1900px; margin: -950px 0 0 -750px; border-radius: 50%; filter: blur(90px); }
+  #floor { position: absolute; left: -10%; right: -10%; bottom: 0; height: 420px; background: linear-gradient(to top, rgba(255,255,255,.05), transparent); }
+
+  /* The phone */
+  #phone { position: absolute; left: 180px; top: 220px; width: 720px; height: 1480px; border-radius: 112px; transform-style: preserve-3d; will-change: transform;
+    background: linear-gradient(135deg, #5b6068 0%, #23262b 18%, #15171b 50%, #2c2f35 82%, #6a6f78 100%);
+    box-shadow: 0 60px 140px rgba(0,0,0,.85), inset 0 0 0 2px rgba(255,255,255,.14); }
+  .sidebtn { position: absolute; background: linear-gradient(to right, #111, #4a4e55); border-radius: 4px; }
+  #screen { position: absolute; left: 16px; top: 16px; right: 16px; bottom: 16px; border-radius: 97px; overflow: hidden; background: #070a10; box-shadow: inset 0 0 0 3px #000; }
+  #island { position: absolute; left: 50%; top: 22px; width: 190px; height: 52px; margin-left: -95px; border-radius: 30px; background: #000; z-index: 9; }
+  #island i { position: absolute; right: 14px; top: 15px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #233049, #05070c 70%); }
+  #glare { position: absolute; inset: 0; border-radius: 97px; z-index: 20; pointer-events: none; mix-blend-mode: screen;
+    background: linear-gradient(115deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,0) 28%); }
+  #wake { position: absolute; inset: 0; z-index: 19; background: #000; }
+
+  /* App UI, an original Pixsup screen */
+  #status { position: absolute; left: 62px; right: 62px; top: 32px; display: flex; justify-content: space-between; font-size: 25px; font-weight: 700; }
+  #appbar { position: absolute; left: 34px; right: 34px; top: 92px; height: 68px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 900; letter-spacing: .01em; }
+  .logo b { color: var(--cyan); font-weight: 900; } .logo em { color: #fb923c; font-style: normal; }
+  #applogo { font-size: 44px; }
+  #livepill { display: flex; align-items: center; gap: 9px; font-size: 22px; font-weight: 800; color: #cbd5e1; padding: 8px 15px; border-radius: 99px; background: rgba(255,255,255,.07); }
+  #livepill u { width: 11px; height: 11px; border-radius: 50%; background: #22c55e; display: block; }
+  #lifewrap { position: absolute; left: 34px; right: 34px; top: 172px; }
+  #lifelabel { display: flex; align-items: center; gap: 9px; font-size: 27px; font-weight: 900; margin-bottom: 10px; }
+  #lifebar { height: 12px; border-radius: 9px; background: rgba(255,255,255,.14); overflow: hidden; }
+  #lifefill { height: 100%; border-radius: 9px; }
+  #photo { position: absolute; left: 24px; right: 24px; top: 240px; height: 760px; border-radius: 34px; overflow: hidden; background: #111; }
+  #photo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  #photoshade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,.18), transparent 30%, transparent 62%, rgba(0,0,0,.72)); }
+  #savedchip { position: absolute; left: 22px; bottom: 22px; display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 99px; font-size: 25px; font-weight: 800; color: #fde047; background: rgba(0,0,0,.78); }
+  #meta { position: absolute; left: 36px; right: 36px; top: 1016px; }
+  #who { display: flex; align-items: center; gap: 12px; font-size: 25px; font-weight: 700; color: #cbd5e1; }
+  #who i { width: 42px; height: 42px; border-radius: 50%; display: block; background: linear-gradient(135deg, var(--cyan), var(--amber)); }
+  #ptitle { margin-top: 8px; font-size: 34px; font-weight: 900; }
+  #savebtn { position: absolute; left: 34px; right: 34px; top: 1130px; height: 122px; border-radius: 38px; display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 56px; font-weight: 900; letter-spacing: .03em; }
+  #tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 170px; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 22px; background: linear-gradient(to bottom, #0e1320, #090c14); border-top: 1px solid rgba(255,255,255,.08); }
+  #tabs div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 19px; font-weight: 700; color: #7c8797; }
+  #tabs div.on { color: var(--cyan); }
+  #tabs svg { width: 42px; height: 42px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  #tabs .plus { width: 92px; height: 92px; margin-top: -30px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), #fb923c); color: #05070c; justify-content: center; box-shadow: 0 0 24px rgba(34,211,238,.5); }
+  #tabs .plus svg { width: 48px; height: 48px; stroke-width: 3; }
+
+  /* Things floating in front of the phone */
+  #vignette { position: absolute; inset: 0; pointer-events: none; }
+  #count { position: absolute; left: 0; right: 0; top: 0; text-align: center; font-size: 430px; line-height: 1; font-weight: 900; color: #fff; letter-spacing: -.03em; will-change: transform; }
+  #hooktext { position: absolute; left: 60px; right: 60px; text-align: center; font-size: 66px; font-weight: 900; letter-spacing: -.005em; text-shadow: 0 4px 30px #000, 0 0 6px #000; }
+  #hooktext span { display: inline-block; padding: 12px 26px; border-radius: 18px; background: rgba(0,0,0,.66); }
+
+  /* The finger */
+  #fingershadow { position: absolute; left: 0; top: 0; width: 280px; height: 200px; margin: -100px 0 0 -140px; border-radius: 50%; background: rgba(0,0,0,.85); filter: blur(26px); }
+  #finger { position: absolute; left: 0; top: 0; width: 520px; height: 1300px; margin-left: -260px; transform-origin: 260px 0; }
+
+  /* The save */
+  #flash { position: absolute; inset: 0; pointer-events: none; }
+  .ring { position: absolute; left: 0; top: 0; border-radius: 50%; border-style: solid; border-color: var(--green); }
+  .spark { position: absolute; left: 0; top: 0; border-radius: 50%; background: var(--green); box-shadow: 0 0 14px var(--green); }
+  #savedword { position: absolute; left: 0; right: 0; text-align: center; font-size: 186px; line-height: 1; font-weight: 900; letter-spacing: -.02em; color: #fff; }
+  #bigcheck { position: absolute; left: 50%; width: 170px; height: 170px; margin-left: -85px; }
+
+  /* Scene 4: the wall of moments */
+  #wall { position: absolute; left: 50%; top: 50%; width: 1800px; height: 3000px; margin: -1500px 0 0 -900px; display: flex; gap: 30px; justify-content: center; transform-style: preserve-3d; }
+  .col { display: flex; flex-direction: column; gap: 30px; width: 400px; will-change: transform; }
+  .tile { position: relative; width: 400px; height: 500px; flex: none; border-radius: 40px; overflow: hidden; background: #111; box-shadow: 0 30px 70px rgba(0,0,0,.7), 0 0 0 2px rgba(34,211,238,.28); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile:after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,.22), transparent 34%, transparent 66%, rgba(0,0,0,.62)); }
+  .tile .pill { position: absolute; z-index: 2; left: 18px; top: 18px; display: flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: 99px; font-size: 24px; font-weight: 800; color: #fdba74; background: rgba(0,0,0,.72); }
+  .tile .hit { position: absolute; z-index: 2; right: 18px; bottom: 18px; width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(0,0,0,.7); }
+  #sweep { position: absolute; inset: -20%; pointer-events: none; mix-blend-mode: screen; background: linear-gradient(112deg, transparent 38%, rgba(120,220,255,.26) 50%, transparent 62%); }
+  #wallshade { position: absolute; inset: 0; background: radial-gradient(ellipse 72% 34% at 50% 48%, rgba(3,4,6,.9) 0%, rgba(3,4,6,.55) 62%, rgba(3,4,6,.1) 100%), radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.72) 100%); }
+  #walllogo { position: absolute; left: 0; right: 0; top: 650px; text-align: center; font-size: 74px; }
+  #diff { position: absolute; left: 90px; right: 90px; top: 760px; text-align: center; font-size: 82px; line-height: 1.04; font-weight: 900; letter-spacing: -.015em; }
+  #diff span { display: block; }
+
+  /* Scene 5: the call to action */
+  #endlogo { position: absolute; left: 0; right: 0; top: 480px; text-align: center; font-size: 190px; line-height: 1; letter-spacing: -.01em; }
+  #tagline { position: absolute; left: 60px; right: 60px; top: 730px; text-align: center; font-size: 64px; line-height: 1.16; font-weight: 900; }
+  #tagline .g { color: var(--green); text-shadow: 0 0 34px rgba(43,255,136,.55); }
+  #visit { position: absolute; left: 0; right: 0; top: 990px; text-align: center; font-size: 46px; font-weight: 800; letter-spacing: .34em; text-indent: .34em; color: #cbd5e1; }
+  #url { position: absolute; left: 0; right: 0; top: 1056px; text-align: center; font-size: 124px; line-height: 1.1; font-weight: 900; letter-spacing: -.015em; color: #fff; }
+  #underline { position: absolute; left: 50%; top: 1218px; height: 10px; border-radius: 9px; background: var(--green); box-shadow: 0 0 34px 6px rgba(43,255,136,.65); }
+
+  #grain { position: absolute; inset: -60px; pointer-events: none; opacity: .05; mix-blend-mode: overlay; }
+  #thumbhead { display: none; position: absolute; left: 0; right: 0; top: 0; padding: 96px 0 150px; text-align: center; background: linear-gradient(to bottom, #000 62%, transparent); }
+  #thumbhead .logo { font-size: 104px; display: block; }
+  #thumbhead .line { display: block; margin-top: 12px; font-size: 66px; font-weight: 900; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="scene-phone" class="layer">
+    <div id="backlight"></div>
+    <div id="floor"></div>
+    <div id="phone">
+      <div class="sidebtn" style="left:-5px;top:300px;width:6px;height:74px"></div>
+      <div class="sidebtn" style="left:-5px;top:410px;width:6px;height:130px"></div>
+      <div class="sidebtn" style="left:-5px;top:560px;width:6px;height:130px"></div>
+      <div class="sidebtn" style="right:-5px;top:440px;width:6px;height:190px;transform:scaleX(-1)"></div>
+      <div id="screen">
+        <div id="island"><i></i></div>
+        <div id="status"><span>7:30</span><span>5G</span></div>
+        <div id="appbar">
+          <div id="applogo" class="logo"><b>PIX</b><em>SUP</em></div>
+          <div id="livepill"><u></u>LIVE</div>
+        </div>
+        <div id="lifewrap">
+          <div id="lifelabel"><svg width="26" height="30" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h14M5 26h14M7 2v5c0 4 10 6 10 11v8M17 2v5c0 4-10 6-10 11v8"/></svg><span id="lifetext"></span></div>
+          <div id="lifebar"><div id="lifefill"></div></div>
+        </div>
+        <div id="photo">
+          <img id="heroimg" src="assets/hero.jpg" />
+          <div id="photoshade"></div>
+          <div id="savedchip"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fde047"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Saved by @you</div>
+        </div>
+        <div id="meta">
+          <div id="who"><i></i>@george</div>
+          <div id="ptitle">Sunset Sailor and His Furry Friend</div>
+        </div>
+        <div id="savebtn"><svg id="savebolt" width="58" height="58" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="savelabel">SAVE</span></div>
+        <div id="tabs">
+          <div class="on"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5 10v10h14V10M10 20v-6h4v6"/></svg>Home</div>
+          <div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Explore</div>
+          <div class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Hits</div>
+          <div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>Profile</div>
+        </div>
+        <div id="wake"></div>
+        <div id="glare"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="vignette"></div>
+  <div id="count">10</div>
+  <div id="hooktext"><span>YOU HAVE 10 SECONDS…</span></div>
+
+  <div id="fingershadow"></div>
+  <svg id="finger" viewBox="0 0 520 1300">
+    <defs>
+      <linearGradient id="skin" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" stop-color="#7d4c35"/><stop offset=".1" stop-color="#b57a5c"/><stop offset=".32" stop-color="#e2ab8c"/>
+        <stop offset=".56" stop-color="#efbfa2"/><stop offset=".82" stop-color="#c88c6d"/><stop offset="1" stop-color="#7a4832"/>
+      </linearGradient>
+      <linearGradient id="tipblush" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="#d9826c" stop-opacity=".62"/><stop offset=".2" stop-color="#d9826c" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="nail" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="#fbe3da"/><stop offset=".55" stop-color="#f2c4b6"/><stop offset="1" stop-color="#d99d8d"/>
+      </linearGradient>
+      <linearGradient id="nailgloss" x1="0" x2="1" y1="0" y2="0">
+        <stop offset=".12" stop-color="#fff" stop-opacity="0"/><stop offset=".34" stop-color="#fff" stop-opacity=".78"/><stop offset=".52" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="soft"><feGaussianBlur stdDeviation="2.2"/></filter>
+      <filter id="soft6"><feGaussianBlur stdDeviation="7"/></filter>
+      <filter id="skintex" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/>
+        <feColorMatrix values="0 0 0 0 .3  0 0 0 0 .16  0 0 0 0 .1  0 0 0 .3 -.08"/>
+        <feComposite in2="SourceAlpha" operator="in"/>
+      </filter>
+      <clipPath id="fingerclip"><path id="fingerpath" d="M260 0C196 0 158 50 152 118L130 470C122 640 92 900 40 1300H500C450 900 408 640 392 470L368 118C362 50 324 0 260 0Z"/></clipPath>
+    </defs>
+    <g clip-path="url(#fingerclip)">
+      <rect width="520" height="1300" fill="url(#skin)"/>
+      <rect width="520" height="1300" fill="url(#tipblush)"/>
+      <rect width="520" height="1300" filter="url(#skintex)"/>
+      <g fill="none" stroke="#7c4a34" stroke-linecap="round" filter="url(#soft)">
+        <path d="M172 366C220 382 300 382 350 366" stroke-width="4" opacity=".55"/>
+        <path d="M164 392C218 410 304 410 358 392" stroke-width="5" opacity=".65"/>
+        <path d="M168 418C222 432 300 432 354 418" stroke-width="3.5" opacity=".42"/>
+        <path d="M128 760C200 786 324 786 400 760" stroke-width="5" opacity=".5"/>
+        <path d="M120 792C198 822 330 822 410 792" stroke-width="6" opacity=".6"/>
+      </g>
+      <ellipse cx="210" cy="600" rx="40" ry="280" fill="#fff" opacity=".1" filter="url(#soft6)"/>
+    </g>
+    <path d="M260 26C214 26 184 62 180 116L176 216C176 256 214 280 260 280S344 256 344 216L340 116C336 62 306 26 260 26Z" fill="#a9674f" opacity=".5" filter="url(#soft)"/>
+    <path d="M260 32C218 32 190 66 187 116L184 212C184 248 218 270 260 270S336 248 336 212L333 116C330 66 302 32 260 32Z" fill="url(#nail)"/>
+    <path d="M198 222C204 246 232 262 260 262S316 246 322 222C306 240 284 248 260 248S214 240 198 222Z" fill="#fff" opacity=".6"/>
+    <path d="M260 32C218 32 190 66 187 116L184 212C184 248 218 270 260 270S336 248 336 212L333 116C330 66 302 32 260 32Z" fill="url(#nailgloss)"/>
+    <path d="M196 92C204 62 228 42 260 42S316 62 324 92C308 72 286 60 260 60S212 72 196 92Z" fill="#fff" opacity=".78"/>
+  </svg>
+
+  <div id="flash"></div>
+  <div id="fx" class="layer" style="pointer-events:none"></div>
+  <svg id="bigcheck" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#2bff88"/><path id="checkpath" d="M28 52 44 68 74 34" fill="none" stroke="#04210f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div id="savedword">SAVED!</div>
+
+  <div id="scene-wall" class="layer">
+    <div id="wall"></div>
+    <div id="wallshade"></div>
+    <div id="sweep"></div>
+    <div id="walllogo" class="logo"><b>PIX</b><em>SUP</em></div>
+    <div id="diff"><span>A DIFFERENT WAY</span><span>TO SHARE</span><span>MOMENTS.</span></div>
+  </div>
+
+  <div id="scene-end" class="layer" style="background:#000">
+    <div id="endglow" class="layer"></div>
+    <div id="endlogo" class="logo"><b>PIX</b><em>SUP</em></div>
+    <div id="tagline"><div id="tag1">DON’T JUST SCROLL.</div><div id="tag2" class="g">SAVE THE MOMENT.</div></div>
+    <div id="visit">VISIT</div>
+    <div id="url">pixsup.com</div>
+    <div id="underline"></div>
+  </div>
+
+  <div id="thumbhead"><span class="logo"><b>PIX</b><em>SUP</em></span><span class="line">SAVE IT BEFORE IT’S GONE</span></div>
+
+  <svg id="grain" width="1200" height="2040"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+  <div id="blackout" class="layer" style="background:#000;pointer-events:none"></div>
+</div>
+
+<script src="timeline.js"></script>
+<script src="composition.js"></script>
+</body>
+</html>
