@@ -15,7 +15,6 @@
     <title>Pixsup – photos that live only if you keep them alive</title>
     <!-- og:start (middleware.js swaps this block for per-post previews on /p/:id) -->
     <meta name="description" content="Pixsup is a live photo app where every post has a timer. Hit, react and comment to keep the photos and news you love alive, rescue posts before they disappear, and join today's photo challenge." />
-    <link rel="canonical" href="https://www.pixsup.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pixsup" />
     <meta property="og:title" content="Pixsup – photos that live only if you keep them alive" />
@@ -24,6 +23,13 @@
     <meta property="og:url" content="https://www.pixsup.com/" />
     <meta name="twitter:card" content="summary_large_image" />
     <!-- og:end -->
+    <!-- Every route serves this file, so the canonical link follows the address
+         (a fixed one would tell Google /explore, /terms… are copies of the home page) -->
+    <script>
+      document.head.appendChild(
+        Object.assign(document.createElement("link"), { rel: "canonical", href: "https://www.pixsup.com" + location.pathname })
+      );
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
