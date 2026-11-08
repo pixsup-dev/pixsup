@@ -1,7 +1,8 @@
 // Renders the commercial: every frame from composition.html, the sound from
 // audio.mjs, then the finished MP4s and the thumbnail.
 //
-//   node render.mjs                 everything
+//   node render.mjs                 everything, for the original commercial
+//   node render.mjs --video cat     another version (see variants.js)
 //   node render.mjs --stills 45,90  just these frames, as PNGs in .cache/stills
 //   node render.mjs --encode        re-encode without redrawing the frames
 //
@@ -14,12 +15,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import puppeteer from "puppeteer-core";
 import ffmpeg from "ffmpeg-static";
 import "./timeline.js";
+import "./variants.js";
 import { makeAudio } from "./audio.mjs";
 
 const T = globalThis.PIXSUP_TIMELINE;
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(here, ".cache");
-const FRAMES = path.join(CACHE, "frames");
 const OUT = path.join(os.homedir(), "Desktop", "Pixsup videos", "Promo");
 const TOTAL = T.duration * T.fps;
 const CHROME = [
@@ -34,12 +35,19 @@ const arg = (name) => {
   return i < 0 ? null : process.argv[i + 1] ?? "";
 };
 
+const KEY = arg("--video") ?? "original";
+const VARIANT = globalThis.PIXSUP_VARIANTS[KEY];
+if (!VARIANT) throw new Error(`No version called "${KEY}" in variants.js`);
+const FRAMES = path.join(CACHE, `frames-${KEY}`);
+// The original keeps its first names; the rest are pixsup_promo_KEY…
+const NAME = KEY === "original" ? "pixsup_promo_15sec" : `pixsup_promo_${KEY}`;
+
 async function openPage() {
   const browser = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--hide-scrollbars", "--allow-file-access-from-files", "--force-color-profile=srgb"] });
   const page = await browser.newPage();
   await page.setViewport({ width: 1080, height: 1920, deviceScaleFactor: 1 });
   page.on("pageerror", (e) => console.error("PAGE ERROR:", e.message));
-  await page.goto(pathToFileURL(path.join(here, "composition.html")).href, { waitUntil: "networkidle0" });
+  await page.goto(`${pathToFileURL(path.join(here, "composition.html")).href}?v=${KEY}`, { waitUntil: "networkidle0" });
   await page.evaluate(() => window.READY);
   return { browser, page };
 }
@@ -55,12 +63,12 @@ async function renderFrames() {
     if (f % 30 === 0) console.log(`  frame ${f}/${TOTAL} (${Math.round((Date.now() - started) / 1000)}s)`);
   }
   await page.evaluate(() => window.thumbnail());
-  await page.screenshot({ path: path.join(OUT, "pixsup_thumbnail.png"), type: "png" });
+  await page.screenshot({ path: path.join(OUT, KEY === "original" ? "pixsup_thumbnail.png" : `${NAME}_thumbnail.png`), type: "png" });
   await browser.close();
 }
 
 async function stills(list) {
-  const dir = path.join(CACHE, "stills");
+  const dir = path.join(CACHE, "stills", KEY);
   fs.mkdirSync(dir, { recursive: true });
   const { browser, page } = await openPage();
   for (const f of list) {
@@ -101,19 +109,20 @@ if (!process.argv.includes("--encode")) {
   await renderFrames();
 }
 console.log("Making the sound…");
-const { full, sfx } = makeAudio(CACHE);
+const { full, sfx } = makeAudio(path.join(CACHE, `audio-${KEY}`), KEY);
 console.log("Encoding…");
 const MASTER = ["-preset", "slow", "-crf", "15", "-pix_fmt", "yuv420p"];
 // -14 LUFS is where the platforms aim; the limit keeps peaks from crackling
-const LOUDNESS = "alimiter=limit=0.7:attack=2:release=40:level=false,loudnorm=I=-14:TP=-2:LRA=11";
+const LOUDNESS = "alimiter=limit=0.7:attack=2:release=40:level=false,loudnorm=I=-14:TP=-2:LRA=11,alimiter=limit=0.76:attack=1:release=40:level=false";
 // Master and no-music version
-encode("pixsup_promo_15sec.mp4", full, MASTER, LOUDNESS);
-encode("pixsup_promo_15sec_no_music.mp4", sfx, MASTER, LOUDNESS);
+encode(`${NAME}.mp4`, full, MASTER, LOUDNESS);
+encode(`${NAME}_no_music.mp4`, sfx, MASTER, LOUDNESS);
 // For TikTok and Shorts: a steady bitrate they recompress cleanly
 encode(
-  "pixsup_promo_15sec_tiktok_shorts.mp4",
+  `${NAME}_tiktok_shorts.mp4`,
   full,
   ["-preset", "slow", "-b:v", "12M", "-maxrate", "15M", "-bufsize", "24M", "-pix_fmt", "yuv420p"],
   LOUDNESS
 );
+fs.writeFileSync(path.join(OUT, `${NAME}_caption.txt`), `YouTube Shorts title: ${VARIANT.youtube}\n\n${VARIANT.caption}\n`);
 console.log(`\nDone: ${OUT}`);

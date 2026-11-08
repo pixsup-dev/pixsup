@@ -5,10 +5,15 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import ffmpeg from "ffmpeg-static";
 import "./timeline.js";
+import "./variants.js";
 
 const T = globalThis.PIXSUP_TIMELINE;
 const OUT = path.join(os.homedir(), "Desktop", "Pixsup videos", "Promo");
-const FILES = ["pixsup_promo_15sec.mp4", "pixsup_promo_15sec_no_music.mp4", "pixsup_promo_15sec_tiktok_shorts.mp4"];
+// node verify.mjs [version], see variants.js
+const KEY = process.argv[2] ?? "original";
+const VARIANT = globalThis.PIXSUP_VARIANTS[KEY];
+const NAME = KEY === "original" ? "pixsup_promo_15sec" : `pixsup_promo_${KEY}`;
+const FILES = [`${NAME}.mp4`, `${NAME}_no_music.mp4`, `${NAME}_tiktok_shorts.mp4`];
 const run = (...args) => spawnSync(ffmpeg, args, { encoding: "buffer", maxBuffer: 1 << 30 });
 const text = (...args) => run(...args).stderr.toString();
 const check = (ok, label) => console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}`);
@@ -58,7 +63,9 @@ for (const name of FILES) {
   const tapFrame = T.tap * T.fps;
   const before = frameColor(file, tapFrame - 1);
   const on = frameColor(file, tapFrame);
-  check(on[1] > 180 && on[1] > on[0] * 1.3 && before[1] < 110, `green flash on frame ${tapFrame}: rgb ${before} → rgb ${on}`);
+  if (VARIANT.win) check(on[0] > before[0] * 1.5 && on[0] > 180, `gold flash on frame ${tapFrame}: rgb ${before} → rgb ${on}`);
+  else if (VARIANT.dies) check(on[0] > before[0] * 1.3 && on[0] > on[1] * 1.3, `red flash on frame ${tapFrame}: rgb ${before} → rgb ${on}`);
+  else check(on[1] > 180 && on[1] > on[0] * 1.3 && before[1] < 110, `green flash on frame ${tapFrame}: rgb ${before} → rgb ${on}`);
   const click = onset(file, T.tap - 0.1, T.tap + 0.1);
   check(Math.abs(click - T.tap) < 1 / T.fps, `tap sound at ${click.toFixed(3)}s (flash at ${T.tap}s, off by ${Math.abs(click - T.tap) * 1000 | 0} ms)`);
 }

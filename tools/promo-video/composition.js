@@ -3,6 +3,47 @@
 const T = globalThis.PIXSUP_TIMELINE;
 const $ = (id) => document.getElementById(id);
 
+// Which version of the commercial: composition.html?v=cat (see variants.js)
+const V = globalThis.PIXSUP_VARIANTS[new URLSearchParams(location.search).get("v") || "original"];
+$("heroimg").src = V.hero;
+$("ptitle").textContent = V.title;
+$("hooktext").firstElementChild.textContent = V.hook;
+V.wall.forEach((line, i) => ($("diff").children[i].textContent = line));
+$("tag1").textContent = V.tag[0];
+$("tag2").textContent = V.tag[1];
+$("thumbhead").querySelector(".line").textContent = V.thumb;
+const TICKS = V.ticks ?? T.ticks;
+const HOT = V.hot ?? "255,40,60"; // the colour of the tension
+const WIN = V.win ?? "43,255,136"; // the colour of the payoff
+if (V.hook2) $("hook2").firstElementChild.textContent = V.hook2;
+if (V.word) $("savedword").textContent = V.word;
+if (V.wordSize) $("savedword").style.fontSize = `${V.wordSize}px`;
+if (V.countSize) $("count").style.fontSize = `${V.countSize}px`;
+if (V.chip) $("savedchip").lastChild.textContent = V.chip;
+if (V.win) {
+  document.documentElement.style.setProperty("--green", `rgb(${WIN})`);
+  document.querySelector("#bigcheck circle").setAttribute("fill", `rgb(${WIN})`);
+}
+// The "only one" story: photo A above, the main photo (B) below
+if (V.duel) {
+  const card = document.createElement("div");
+  card.className = "duelcard";
+  card.id = "duela";
+  card.style.top = "240px";
+  card.innerHTML = `<img id="duelimg" src="${V.duel.hero}"><div class="duelname"><b>A</b>${V.duel.title}</div><div id="duelgone">GONE.</div><div id="duelsave">SAVE A</div>`;
+  $("screen").insertBefore(card, $("photo"));
+  Object.assign($("photo").style, { top: "692px", height: "440px", borderRadius: "30px" });
+  const name = document.createElement("div");
+  name.className = "duelname";
+  name.innerHTML = `<b>B</b>${V.title}`;
+  Object.assign(name.style, { top: "auto", bottom: "18px" });
+  Object.assign($("savedchip").style, { top: "18px", bottom: "auto" });
+  $("photo").appendChild(name);
+  $("meta").style.display = "none";
+  Object.assign($("savebtn").style, { top: "1146px", height: "116px" });
+}
+if (V.dies) $("savedword").textContent = "GONE.";
+
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, p) => a + (b - a) * p;
 const ramp = (t, a, b) => clamp((t - a) / (b - a));
@@ -117,14 +158,17 @@ function camera(t) {
 
 function seek(frame) {
   const t = frame / T.fps;
-  const saved = t >= T.tap;
+  const dead = !!V.dies && t >= T.tap; // the version where nobody saves it
+  const saved = !V.dies && t >= T.tap;
 
   // Which number, and how fresh it is
-  const tick = [...T.ticks].reverse().find(([at]) => t >= at);
-  const n = tick[1];
-  const tickAge = t - tick[0];
+  const tick = [...TICKS].reverse().find(([at]) => t >= at);
+  const step = TICKS.indexOf(tick);
+  const n = dead ? 0 : tick[1];
+  const left = 10 - step; // 10 at the start, 1 on the last tick
+  const tickAge = dead ? t - T.tap : t - tick[0];
   const pulse = t >= 3 && !saved ? Math.exp(-tickAge * 6) : 0;
-  const danger = saved ? 0 : (10 - n) / 9; // 0 calm … 1 about to die
+  const danger = saved ? 0 : dead ? 1 : step / (TICKS.length - 1); // 0 calm … 1 about to die
 
   // ── Layers ────────────────────────────────────────────────
   $("scene-phone").style.display = t < 10.25 ? "block" : "none";
@@ -141,40 +185,55 @@ function seek(frame) {
   $("scene-phone").style.opacity = 1 - ramp(t, 10.0, 10.2);
   $("wake").style.opacity = 1 - ramp(t, 0.7, 1.15);
 
-  const glow = saved ? "43,255,136" : t < 1.5 ? "34,211,238" : "255,40,60";
+  const glow = saved ? WIN : t < 1.5 ? "34,211,238" : HOT;
   const glowA = saved ? lerp(0.5, 0.26, ramp(t, T.tap, 9.8)) : t < 1.5 ? 0.15 * emerge : 0.1 + 0.1 * danger + 0.14 * pulse;
   $("backlight").style.background = `radial-gradient(circle, rgba(${glow},${glowA}) 0%, rgba(${glow},${glowA * 0.35}) 45%, transparent 72%)`;
   $("floor").style.opacity = emerge;
 
   // Inside the app
-  const label = saved ? "1h 00m left" : `0:${String(n).padStart(2, "0")} left`;
+  const label = saved ? V.savedLife ?? "1h 00m left" : V.life ? V.life(t) : `0:${String(n).padStart(2, "0")} left`;
   $("lifetext").textContent = label;
-  $("lifelabel").style.color = saved ? "#fff" : "#ff5a68";
-  const fill = saved ? lerp(n * 10, 100, outCubic(ramp(t, T.tap, T.tap + 0.25))) : (n - clamp(tickAge / 1, 0, 0.9)) * 10;
-  $("lifefill").style.width = `${Math.max(1.5, saved ? fill : t < 3 ? 100 : fill)}%`;
-  $("lifefill").style.background = saved ? "linear-gradient(90deg,#22d3ee,#2bff88)" : "#ff2d3f";
-  $("lifefill").style.boxShadow = saved ? "0 0 18px rgba(43,255,136,.7)" : "0 0 16px rgba(255,45,63,.8)";
+  $("lifelabel").style.color = saved ? "#fff" : V.hot ? `rgb(${HOT})` : "#ff5a68";
+  const before = V.fill ? V.fill(t, step) : (left - clamp(tickAge / 1, 0, 0.9)) * 10;
+  const fill = saved ? lerp(V.fill ? V.fill(T.tap, step) : left * 10, 100, outCubic(ramp(t, T.tap, T.tap + 0.25))) : before;
+  $("lifefill").style.width = dead ? "0%" : `${Math.max(1.5, saved || V.fill ? fill : t < 3 ? 100 : fill)}%`;
+  $("lifefill").style.background = saved ? `linear-gradient(90deg,#22d3ee,rgb(${WIN}))` : V.hot ? `rgb(${HOT})` : "#ff2d3f";
+  $("lifefill").style.boxShadow = saved ? `0 0 18px rgba(${WIN},.7)` : `0 0 16px rgba(${V.hot ?? "255,45,63"},.8)`;
 
   // The photo drains of colour as it dies, and comes back when saved
   const backIn = outCubic(ramp(t, T.tap, T.tap + 0.3));
-  const sat = saved ? lerp(0.2, 1.22, backIn) : lerp(1.08, 0.22, danger);
-  const bri = saved ? lerp(0.7, 1.08, backIn) : lerp(1, 0.72, danger);
+  const before_ = V.look === "dead" ? [0, 0.62] : V.look === "rising" ? [lerp(0.35, 1.12, danger), lerp(0.72, 1.05, danger)] : [lerp(1.08, 0.22, danger), lerp(1, 0.72, danger)];
+  const sat = saved ? lerp(V.look === "rising" ? 1.12 : 0.2, 1.22, backIn) : dead ? lerp(0.22, 0, backIn) : before_[0];
+  const bri = saved ? lerp(0.7, 1.08, backIn) : dead ? lerp(0.72, 0.42, backIn) : before_[1];
   $("heroimg").style.filter = `saturate(${sat}) brightness(${bri})`;
-  $("heroimg").style.transform = `scale(${1.03 + t * 0.008})`;
-  $("savedchip").style.opacity = ramp(t, T.tap + 0.12, T.tap + 0.3);
+  if (V.zoom) {
+    $("heroimg").style.objectPosition = "50% 0";
+    $("heroimg").style.transformOrigin = "0 0";
+  }
+  $("heroimg").style.transform = `scale(${(V.zoom ?? 1) * (1.03 + t * 0.008)})`;
+  $("savedchip").style.opacity = saved ? ramp(t, T.tap + 0.12, T.tap + 0.3) : 0;
   $("savedchip").style.transform = `translateY(${(1 - outBack(ramp(t, T.tap + 0.12, T.tap + 0.34))) * 22}px)`;
+
+  if (V.duel) {
+    // Photo A loses: it stays dying while B comes back
+    $("duelimg").style.filter = saved ? `saturate(${lerp(0.22, 0, backIn)}) brightness(${lerp(0.72, 0.4, backIn)})` : $("heroimg").style.filter;
+    $("duelgone").style.opacity = saved ? ramp(t, T.tap + 0.1, T.tap + 0.24) : 0;
+    $("duelsave").style.background = saved ? "#2a2d33" : "linear-gradient(180deg,#ff4a59,#d3132a)";
+    $("duelsave").style.color = saved ? "#7c8797" : "#fff";
+    $("duelsave").textContent = saved ? "TOO LATE" : "SAVE A";
+  }
 
   // The SAVE button
   const btn = $("savebtn");
-  const press = t >= 8.94 && t < T.tap ? lerp(1, 0.93, ramp(t, 8.94, T.tap)) : saved ? lerp(0.93, 1, outBack(ramp(t, T.tap, T.tap + 0.2))) : 1;
+  const press = !V.dies && t >= 8.94 && t < T.tap ? lerp(1, 0.93, ramp(t, 8.94, T.tap)) : saved ? lerp(0.93, 1, outBack(ramp(t, T.tap, T.tap + 0.2))) : 1;
   const beat = 0.6 + 0.4 * Math.sin(t * Math.PI * 2 * (1.2 + danger * 2));
-  btn.style.transform = `scale(${press * (saved ? 1 : 1 + 0.012 * beat)})`;
-  btn.style.background = saved ? "linear-gradient(180deg,#5dffa6,#12d96d)" : "linear-gradient(180deg,#ff4a59,#d3132a)";
-  btn.style.color = saved ? "#03230f" : "#fff";
-  btn.style.boxShadow = saved
-    ? "0 0 60px 8px rgba(43,255,136,.7), inset 0 2px 0 rgba(255,255,255,.55)"
-    : `0 0 ${34 + 44 * beat * (0.4 + danger)}px ${4 + 8 * danger}px rgba(255,45,63,${0.45 + 0.4 * danger}), inset 0 2px 0 rgba(255,255,255,.3)`;
-  $("savelabel").textContent = saved ? "SAVED" : "SAVE";
+  btn.style.transform = `scale(${press * (saved || dead ? 1 : 1 + 0.012 * beat)})`;
+  btn.style.background = saved ? (V.win ? `linear-gradient(180deg,#ffe08a,rgb(${WIN}))` : "linear-gradient(180deg,#5dffa6,#12d96d)") : V.hot ? `linear-gradient(180deg,rgb(${HOT}),rgba(${HOT},.62))` : dead ? "#2a2d33" : "linear-gradient(180deg,#ff4a59,#d3132a)";
+  btn.style.color = saved ? "#03230f" : dead ? "#7c8797" : "#fff";
+  btn.style.boxShadow = dead ? "none" : saved
+    ? `0 0 60px 8px rgba(${WIN},.7), inset 0 2px 0 rgba(255,255,255,.55)`
+    : `0 0 ${34 + 44 * beat * (0.4 + danger)}px ${4 + 8 * danger}px rgba(${V.hot ?? "255,45,63"},${0.45 + 0.4 * danger}), inset 0 2px 0 rgba(255,255,255,.3)`;
+  $("savelabel").textContent = saved ? V.btn?.[1] ?? "SAVED" : dead ? "TOO LATE" : V.btn?.[0] ?? "SAVE";
 
   // ── The countdown, big and red ────────────────────────────
   const countVisible = t >= T.numberSlam && !saved;
@@ -182,30 +241,39 @@ function seek(frame) {
   count.style.display = countVisible ? "block" : "none";
   if (countVisible) {
     count.textContent = n;
-    const age = n === 10 ? t - T.numberSlam : tickAge;
+    const age = step === 0 && !dead ? t - T.numberSlam : tickAge;
     const pop = outCubic(ramp(age, 0, 0.16));
-    const size = lerp(n === 10 ? 2.1 : 1.32, 1, pop);
-    const top = t < 7 ? 500 : lerp(500, 330, outCubic(ramp(t, 7, 7.3)));
+    const size = lerp(step === 0 && !dead ? 2.1 : 1.32, 1, pop);
+    const [topA, topB] = V.countTop ?? [500, 330];
+    const top = t < 7 ? topA : lerp(topA, topB, outCubic(ramp(t, 7, 7.3)));
     count.style.top = `${top}px`;
-    count.style.opacity = n === 10 ? pop : 1;
+    count.style.opacity = step === 0 && !dead ? pop : 1;
     count.style.transform = `scale(${size})`;
     const heat = 0.55 + 0.45 * Math.exp(-age * 5);
-    count.style.color = "#ff2b3e";
-    count.style.textShadow = `0 0 ${30 + 60 * heat}px rgba(255,30,50,${heat}), 0 0 ${130 * heat + 40}px rgba(255,30,50,.75), 0 10px 44px rgba(0,0,0,.9)`;
+    const numRGB = V.hot ?? "255,30,50";
+    count.style.color = V.hot ? `rgb(${HOT})` : "#ff2b3e";
+    count.style.textShadow = `0 0 ${30 + 60 * heat}px rgba(${numRGB},${heat}), 0 0 ${130 * heat + 40}px rgba(${numRGB},.75), 0 10px 44px rgba(0,0,0,.9)`;
     count.style.webkitTextStroke = "3px rgba(255,235,235,.55)";
   }
 
   const hookIn = outCubic(ramp(t, 1.8, 2.05));
   const hook = $("hooktext");
   hook.style.display = hookIn > 0 && t < 3.0 ? "block" : "none";
-  hook.style.top = `${940 + (1 - hookIn) * 30}px`;
+  hook.style.top = `${(V.hookTop ?? 940) + (1 - hookIn) * 30}px`;
   hook.style.opacity = hookIn;
+  if (V.hook2) {
+    const in2 = outCubic(ramp(t, 7.05, 7.3));
+    const h2 = $("hook2");
+    h2.style.display = in2 > 0 && t < T.tap ? "block" : "none";
+    h2.style.top = `${770 + (1 - in2) * 30}px`;
+    h2.style.opacity = in2;
+  }
 
   const redA = saved ? 0 : t < 1.5 ? 0 : 0.1 + 0.2 * danger + 0.2 * pulse;
   const greenA = saved ? lerp(0.5, 0.16, ramp(t, T.tap, 9.7)) : 0;
   $("vignette").style.background = saved
-    ? `radial-gradient(ellipse at center, transparent 42%, rgba(43,255,136,${greenA}) 100%)`
-    : `radial-gradient(ellipse at center, transparent 40%, rgba(255,16,36,${redA}) 100%)`;
+    ? `radial-gradient(ellipse at center, transparent 42%, rgba(${WIN},${greenA}) 100%)`
+    : `radial-gradient(ellipse at center, transparent 40%, rgba(${V.hot ?? "255,16,36"},${redA}) 100%)`;
   $("vignette").style.opacity = t < 10 ? 1 : 0;
 
   // ── The finger ────────────────────────────────────────────
@@ -214,7 +282,7 @@ function seek(frame) {
   const ty = b.top + b.height * 0.5 - 8;
   const fing = $("finger");
   const fshadow = $("fingershadow");
-  const fingerOn = t >= 7.1 && t < 9.7;
+  const fingerOn = !V.dies && t >= 7.1 && t < 9.7;
   fing.style.display = fingerOn ? "block" : "none";
   fshadow.style.display = fingerOn ? "block" : "none";
   if (fingerOn) {
@@ -239,10 +307,11 @@ function seek(frame) {
 
   // ── The save: flash, rings, sparks, the word ──────────────
   const after = t - T.tap;
-  $("flash").style.background = after >= 0 && after < 0.6 ? `rgba(70,255,150,${0.96 * Math.exp(-after * 8.5)})` : "transparent";
+  const flashRGB = V.dies ? "255,24,44" : V.win ?? "70,255,150";
+  $("flash").style.background = after >= 0 && after < 0.6 ? `rgba(${flashRGB},${(V.dies ? 0.72 : 0.96) * Math.exp(-after * 8.5)})` : "transparent";
   RINGS.forEach((ring, i) => {
     const age = after - i * 0.07;
-    const on = age >= 0 && age < 0.7;
+    const on = !V.dies && age >= 0 && age < 0.7;
     ring.style.display = on ? "block" : "none";
     if (!on) return;
     const size = 120 + outCubic(age / 0.7) * 1300;
@@ -252,7 +321,7 @@ function seek(frame) {
     ring.style.transform = `translate(${tx - size / 2}px, ${ty - size / 2}px)`;
   });
   SPARKS.forEach((s) => {
-    const on = after >= 0 && after < s.life;
+    const on = !V.dies && after >= 0 && after < s.life;
     s.d.style.display = on ? "block" : "none";
     if (!on) return;
     const p = after / s.life;
@@ -265,18 +334,19 @@ function seek(frame) {
   const wordOn = after >= 0.03 && t < 10.1;
   const word = $("savedword");
   const check = $("bigcheck");
-  word.style.display = check.style.display = wordOn ? "block" : "none";
+  word.style.display = wordOn ? "block" : "none";
+  check.style.display = wordOn && !V.dies ? "block" : "none";
   if (wordOn) {
     const inW = outBack(ramp(after, 0.03, 0.24));
     const leave = ramp(t, 9.84, 10.05);
-    word.style.top = "520px";
+    word.style.top = V.dies ? "790px" : `${V.wordTop ?? 520}px`;
     word.style.opacity = ramp(after, 0.03, 0.08) * (1 - leave);
     word.style.transform = `scale(${lerp(1.7, 1, inW) * (1 + leave * 0.5)})`;
-    word.style.textShadow = "0 0 40px rgba(43,255,136,1), 0 0 110px rgba(43,255,136,.85), 0 10px 40px rgba(0,0,0,.75)";
-    check.style.top = "322px";
+    word.style.textShadow = V.dies ? "0 0 40px rgba(255,30,50,1), 0 0 110px rgba(255,30,50,.8), 0 10px 40px rgba(0,0,0,.85)" : `0 0 40px rgba(${WIN},1), 0 0 110px rgba(${WIN},.85), 0 10px 40px rgba(0,0,0,.75)`;
+    check.style.top = `${V.checkTop ?? 322}px`;
     check.style.opacity = ramp(after, 0.03, 0.08) * (1 - leave);
     check.style.transform = `scale(${outBack(ramp(after, 0.03, 0.26)) * (1 + leave * 0.5)})`;
-    check.style.filter = "drop-shadow(0 0 28px rgba(43,255,136,.95))";
+    check.style.filter = `drop-shadow(0 0 28px rgba(${WIN},.95))`;
     const path = $("checkpath");
     path.style.strokeDasharray = "90";
     path.style.strokeDashoffset = `${90 * (1 - outCubic(ramp(after, 0.12, 0.32)))}`;
@@ -337,9 +407,11 @@ function seek(frame) {
 
 // The thumbnail: the moment before the tap, with the brand on top
 function thumbnail() {
-  seek(Math.round(8.62 * T.fps));
+  seek(Math.round((V.dies ? 9.5 : 8.62) * T.fps));
   $("thumbhead").style.display = "block";
-  $("count").style.top = "440px";
+  $("count").style.top = V.countTop ? `${V.countTop[1]}px` : V.dies ? "360px" : "440px";
+  $("hook2").style.display = "none";
+  if (V.dies) $("savedword").style.top = "810px";
   $("appbar").style.visibility = "hidden";
   $("lifewrap").style.visibility = "hidden";
   $("status").style.visibility = "hidden";

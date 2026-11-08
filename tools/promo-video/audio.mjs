@@ -5,15 +5,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import "./timeline.js";
+import "./variants.js";
 
 const T = globalThis.PIXSUP_TIMELINE;
 const SR = 48000;
 const LEN = Math.round(T.duration * SR);
 const TAU = Math.PI * 2;
+let V = globalThis.PIXSUP_VARIANTS.original;
 
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ramp = (t, a, b) => clamp((t - a) / (b - a));
-const midi = (n) => 440 * 2 ** ((n - 69) / 12);
+const midi = (n) => 440 * 2 ** ((n + V.shift - 69) / 12);
 
 function seeded(seed) {
   let s = seed >>> 0;
@@ -172,8 +174,8 @@ function effects() {
   bell(b, T.numberSlam, midi(45), 0.3, { decay: 3, send: 0.7 });
 
   // Digital ticks, one for each number, climbing in pitch
-  T.ticks.slice(1).forEach(([at, n], i) => {
-    const pitch = midi(84 + (10 - n) * 1.2);
+  (V.ticks ?? T.ticks).slice(1).forEach(([at], i) => {
+    const pitch = midi(84 + (i + 1) * 1.2);
     voice(b, at, 0.05, { f: () => pitch, g: (a) => 0.3 * Math.exp(-a * 70), shape: "square", pan: i % 2 ? 0.28 : -0.28, send: 0.14 });
     voice(b, at, 0.1, { f: (a) => 150 * Math.exp(-a * 22) + 60, g: (a) => 0.65 * Math.exp(-a * 30), send: 0.06 });
     noise(b, at, 0.03, { fc: () => 7000, q: 1, g: (a) => 0.3 * Math.exp(-a * 160), seed: 40 + i, mode: "high" });
@@ -199,6 +201,12 @@ function effects() {
     })
   );
 
+  if (V.dies) {
+    // Nobody tapped: a heavy hit and a flatline instead of the chime
+    impact(b, tap, 1.0, 55);
+    bell(b, tap, midi(33), 0.34, { decay: 2, send: 0.7 });
+    voice(b, tap + 0.02, 0.92, { f: () => 988, g: (a) => 0.15 * clamp(a / 0.01) * clamp((0.92 - a) / 0.25), send: 0.25 });
+  } else {
   // The tap: a sharp, dry click on a silent beat
   noise(b, tap, 0.012, { fc: () => 6500, q: 0.8, g: (a) => 1.0 * Math.exp(-a * 420), seed: 12, mode: "high" });
   voice(b, tap, 0.06, { f: (a) => 900 * Math.exp(-a * 60) + 160, g: (a) => 0.9 * Math.exp(-a * 70) });
@@ -209,6 +217,7 @@ function effects() {
     bell(b, tap + 0.02 + i * 0.058, midi(note), 0.34 - i * 0.02, { pan: (i - 2) * 0.16, send: 0.6, decay: 4.5 });
   });
   noise(b, tap + 0.02, 0.5, { fc: (a) => 8000 + 2500 * a, q: 2, g: (a) => 0.14 * Math.exp(-a * 7), seed: 88, send: 0.7 });
+  }
 
   // Into scene 4
   whoosh(b, T.wall - 0.28, 0.5, 0.55, 91);
@@ -230,6 +239,13 @@ function effects() {
 // ---------------------------------------------------------------------------
 
 const BEAT = 60 / 128;
+
+// The chords after the tap, one version per commercial (see variants.js)
+const C = [48, [60, 64, 67, 72]];
+const G = [43, [59, 62, 67, 71]];
+const Am = [45, [60, 64, 69, 72]];
+const F = [41, [60, 65, 69, 72]];
+const PROGS = { classic: [C, G, Am, F], bright: [C, Am, F, G], rising: [F, C, G, Am], lift: [Am, F, C, G] };
 
 function kick(b, at, gain) {
   voice(b, at, 0.28, { f: (a) => 48 + 150 * Math.exp(-a * 38), g: (a) => gain * Math.exp(-a * 11), });
@@ -278,9 +294,9 @@ function music() {
   const b = new Bus();
   const tap = T.tap;
   // Everything sits on the grid running back from the tap
-  const beats = (from, to, step = 1) => {
+  const beats = (from, to, step = 1, anchor = tap) => {
     const out = [];
-    for (let k = Math.ceil((from - tap) / (BEAT * step)); tap + k * BEAT * step < to - 1e-6; k++) out.push(tap + k * BEAT * step);
+    for (let k = Math.ceil((from - anchor) / (BEAT * step)); anchor + k * BEAT * step < to - 1e-6; k++) out.push(anchor + k * BEAT * step);
     return out;
   };
 
@@ -300,18 +316,15 @@ function music() {
   supersaw(b, 3, cutAt - 3, [45, 57, 60, 64], 0.022, tensionCut);
 
   // The release: bright, major, full energy
-  const prog = [
-    [48, [60, 64, 67, 72]], // C
-    [43, [59, 62, 67, 71]], // G
-    [45, [60, 64, 69, 72]], // Am
-    [41, [60, 65, 69, 72]], // F
-  ];
+  // If the post dies, a second of silence first: the music only comes back at the wall
+  const go = V.dies ? T.wall : tap;
+  const prog = PROGS[V.prog];
   const barLen = BEAT * 2;
   const endMusic = T.end;
-  for (let i = 0, at = tap; at < endMusic - 1e-6; i++, at += barLen) {
+  for (let i = 0, at = go; at < endMusic - 1e-6; i++, at += barLen) {
     const [root, chord] = prog[i % 4];
     const len = Math.min(barLen, endMusic - at);
-    supersaw(b, at, len, chord, 0.036, (t) => 2600 + 2600 * ramp(t, tap, endMusic));
+    supersaw(b, at, len, chord, 0.036, (t) => 2600 + 2600 * ramp(t, go, endMusic));
     for (let e = 0; e < 4; e++) {
       const when = at + (e * BEAT) / 2;
       if (when < endMusic && e % 2) bass(b, when, BEAT * 0.44, root - 12 + 12, 0.34);
@@ -322,10 +335,10 @@ function music() {
       if (when < endMusic) pluck(b, when, arp[s] + 12, 0.05, s % 2 ? 0.45 : -0.45, 0.4);
     }
   }
-  beats(tap, endMusic).forEach((at) => kick(b, at, 0.85));
-  beats(tap + BEAT, endMusic, 2).forEach((at, i) => clap(b, at, 0.28, 300 + i * 3));
-  beats(tap + BEAT / 2, endMusic).forEach((at, i) => hat(b, at, 0.2, 400 + i, true));
-  beats(tap, endMusic, 0.25).forEach((at, i) => hat(b, at, 0.07, 500 + i));
+  beats(go, endMusic, 1, go).forEach((at) => kick(b, at, 0.85));
+  beats(go + BEAT, endMusic, 2, go + BEAT).forEach((at, i) => clap(b, at, 0.28, 300 + i * 3));
+  beats(go + BEAT / 2, endMusic, 1, go + BEAT / 2).forEach((at, i) => hat(b, at, 0.2, 400 + i, true));
+  beats(go, endMusic, 0.25, go).forEach((at, i) => hat(b, at, 0.07, 500 + i));
 
   // The ending: one held chord, then clean silence
   supersaw(b, T.end, 1.9, [48, 60, 64, 67, 72], 0.03, (t) => 3200 - 2400 * ramp(t, T.end, T.end + 1.9), 0.6);
@@ -378,7 +391,8 @@ function master(parts) {
   return [l, r];
 }
 
-export function makeAudio(dir) {
+export function makeAudio(dir, key = "original") {
+  V = globalThis.PIXSUP_VARIANTS[key];
   fs.mkdirSync(dir, { recursive: true });
   const fx = effects();
   const mu = music();
