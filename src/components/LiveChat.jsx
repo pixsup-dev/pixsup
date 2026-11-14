@@ -7,6 +7,46 @@ import { useMembers } from "@/hooks/useUsernames";
 import Avatar from "@/components/Avatar";
 
 const LIFETIME_MS = 10 * 60 * 1000;
+const GUEST_KEY = `guest-${Math.random().toString(36).slice(2)}`;
+
+// One live channel per post per page, shared by every chat showing that post
+// (a shared-link page and the same post opened on top of it). Supabase keeps
+// one channel per name, and adding listeners after subscribe() throws, which
+// crashed the app when a post was opened twice.
+const rooms = new Map();
+
+function joinRoom(postId, presenceKey, listener) {
+  const name = `${postId}:${presenceKey}`;
+  let room = rooms.get(name);
+  if (!room) {
+    const channel = supabase.channel(`chat-${postId}`, { config: { presence: { key: presenceKey } } });
+    room = { channel, listeners: new Set(), here: 0 };
+    const r = room;
+    channel
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages", filter: `post_id=eq.${postId}` },
+        ({ new: m }) => r.listeners.forEach((l) => l.message(m))
+      )
+      .on("presence", { event: "sync" }, () => {
+        r.here = Object.keys(channel.presenceState()).length;
+        r.listeners.forEach((l) => l.presence(r.here));
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") channel.track({ at: Date.now() });
+      });
+    rooms.set(name, room);
+  }
+  room.listeners.add(listener);
+  if (room.here) listener.presence(room.here);
+  const joined = room;
+  return () => {
+    joined.listeners.delete(listener);
+    if (joined.listeners.size) return;
+    rooms.delete(name);
+    supabase.removeChannel(joined.channel);
+  };
+}
 
 // A quick chat on a post. Messages vanish after 10 minutes (the server stops
 // serving them, and purges them soon after). Shows who's here right now.
@@ -34,26 +74,14 @@ export default function LiveChat({ post, user, onSignIn, onPresence, variant }) 
       .then((rows) => alive && setMessages(rows))
       .catch(() => {});
 
-    const channel = supabase.channel(`chat-${post.id}`, {
-      config: { presence: { key: user?.id || `guest-${Math.random().toString(36).slice(2)}` } },
+    const leave = joinRoom(post.id, user?.id || GUEST_KEY, {
+      message: (m) => setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m])),
+      presence: (n) => onPresence?.(n),
     });
-    channel
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `post_id=eq.${post.id}` },
-        ({ new: m }) =>
-          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]))
-      )
-      .on("presence", { event: "sync" }, () => {
-        onPresence?.(Object.keys(channel.presenceState()).length);
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") channel.track({ at: Date.now() });
-      });
     return () => {
       alive = false;
       onPresence?.(0);
-      supabase.removeChannel(channel);
+      leave();
     };
   }, [post.id, user?.id]);
 
