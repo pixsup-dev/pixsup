@@ -26,6 +26,7 @@ import AdminPollEditor from "@/components/AdminPollEditor";
 import { useBlocklist } from "@/hooks/useBlocklist";
 import { moodSummary, reactionPalette } from "@/lib/reactions";
 import ReelsViewer from "@/components/ReelsViewer";
+import MoreEmojis from "@/components/MoreEmojis";
 
 // Phones get Reels mode; tablets and computers the side-by-side card
 const PHONE = "(max-width: 767px)";
@@ -124,6 +125,7 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
   };
 
   const [sendingComment, setSendingComment] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false); // the "+" emojis
   const addComment = async () => {
     if (!text.trim() || sendingComment) return;
     setSendingComment(true);
@@ -619,7 +621,26 @@ export function PostCard({ post, onClose, onVote, onReact, onSignIn, dir = 0, on
                 </span>
               </button>
             ))}
+            <button
+              onClick={() => setMoreOpen((m) => !m)}
+              aria-label="More emojis"
+              aria-expanded={moreOpen}
+              className={`spring-tap flex items-center gap-1 rounded-lg px-1.5 text-sm font-black transition ${moreOpen ? "bg-white/15 text-white" : "text-gray-300 hover:bg-white/10"}`}
+            >
+              {moreOpen ? "×" : "+"} <span className="text-[10px] font-bold">More</span>
+            </button>
           </div>
+          {moreOpen && (
+            <MoreEmojis
+              post={current}
+              shown={palette}
+              className="rounded-xl bg-white/5 p-1.5"
+              onPick={(e) => {
+                setMoreOpen(false);
+                react(e);
+              }}
+            />
+          )}
 
           {mood && (
             <div className="space-y-1.5">

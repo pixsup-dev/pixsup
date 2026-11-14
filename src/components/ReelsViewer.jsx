@@ -12,6 +12,7 @@ import { PostCard } from "@/components/PostDetail";
 import { reactionPalette } from "@/lib/reactions";
 import { isBreaking } from "@/lib/breaking";
 import EmojiBurst from "@/components/EmojiBurst";
+import MoreEmojis from "@/components/MoreEmojis";
 import useGameRules from "@/hooks/useGameRules";
 
 // Reels mode (phones): one post per screen, swiped like a feed. The browser's
@@ -125,6 +126,10 @@ function paintGlow(canvas, img) {
 
 const Reel = memo(function Reel({ post, active, near, now, author, user, voted, onHit, onReact, onComments, onSignIn, onClose }) {
   const [fan, setFan] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false); // the "+" emojis
+  useEffect(() => {
+    if (!fan) setMoreOpen(false);
+  }, [fan]);
   const [pops, setPops] = useState([]);
   const lastTap = useRef(0);
   const glow = useRef(null);
@@ -335,13 +340,33 @@ const Reel = memo(function Reel({ post, active, near, now, author, user, voted, 
                       setFan(false);
                       onReact(post, e);
                     }}
-                    className="flex w-14 flex-col items-center gap-1 rounded-2xl py-1.5 transition active:scale-90 active:bg-white/10"
+                    className="flex w-12 flex-col items-center gap-1 rounded-2xl py-1.5 transition active:scale-90 active:bg-white/10"
                   >
                     <span className="text-[32px] leading-none">{e}</span>
                     <span className="text-[11px] font-bold tabular-nums text-gray-300">{(post.reactions || {})[e] || 0}</span>
                   </button>
                 ))}
+                <button
+                  onClick={() => setMoreOpen((m) => !m)}
+                  aria-label="More emojis"
+                  aria-expanded={moreOpen}
+                  className={`flex w-12 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 text-[28px] font-black leading-none transition active:scale-90 ${moreOpen ? "bg-white/15 text-white" : "text-gray-300"}`}
+                >
+                  {moreOpen ? "×" : "+"}
+                  <span className="text-[11px] font-bold">More</span>
+                </button>
               </div>
+              {moreOpen && (
+                <MoreEmojis
+                  post={post}
+                  shown={palette}
+                  className="mt-2 max-h-[40vh] overflow-y-auto border-t border-white/10 pt-2"
+                  onPick={(e) => {
+                    setFan(false);
+                    onReact(post, e);
+                  }}
+                />
+              )}
             </motion.div>
           </motion.div>
         )}

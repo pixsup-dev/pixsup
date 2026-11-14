@@ -8,6 +8,21 @@ export function reactionPalette(post) {
   return [...new Set(["🔥", "😂", ...extra])].slice(0, 5);
 }
 
+// The rest of the choice, behind "+": emojis people already used on this post
+// first (so you can join in), then everyday ones
+const EVERYDAY = [
+  "👍", "👎", "😊", "😍", "❤️", "🥹", "😭", "🤣", "😎", "🤩", "🥰", "😅", "😬", "🙄", "😱", "😴",
+  "🤢", "🥶", "💔", "👏", "🙌", "💯", "✨", "🎉", "💪", "🙏", "👀", "🫶", "🤝", "😤", "🤔", "😮",
+];
+
+export function moreEmojis(post, shown = []) {
+  const used = Object.entries(post?.reactions || {})
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([emoji]) => emoji);
+  return [...new Set([...used, ...EVERYDAY])].filter((e) => !shown.includes(e)).slice(0, 40);
+}
+
 // The crowd's mood: top reactions as shares of all reactions, e.g.
 // [{ emoji: "😢", pct: 62 }, { emoji: "😡", pct: 21 }]. Null until anyone reacts.
 export function moodSummary(reactions, limit = 3) {
