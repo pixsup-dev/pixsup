@@ -1,6 +1,6 @@
 // News gets "how does this make you feel" reactions; member posts keep the
 // playful set (plus any AI-suggested emojis).
-export const NEWS_REACTIONS = ["😮", "😢", "😡", "👏", "🤔"];
+export const NEWS_REACTIONS = ["😊", "😮", "😢", "😡", "👏"];
 
 export function reactionPalette(post) {
   if (post?.isNews) return NEWS_REACTIONS;

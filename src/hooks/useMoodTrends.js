@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
 const FEELINGS = {
+  "😊": "Joy",
   "😮": "Shock",
   "😢": "Sadness",
   "😡": "Anger",
