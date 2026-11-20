@@ -20,6 +20,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// Live updates are a bonus. Some browsers refuse the live connection (a
+// privacy extension, a work network): Supabase then throws "WebSocket not
+// available", which crashed the whole page. Now the app carries on without
+// live updates instead.
+const realtimeConnect = supabase.realtime.connect.bind(supabase.realtime);
+supabase.realtime.connect = () => {
+  try {
+    realtimeConnect();
+  } catch (e) {
+    console.warn("Live updates are off:", e?.message);
+  }
+};
+
 const MEDIA_BUCKET = "media";
 
 // Base44 entity name → Postgres table
